@@ -1,15 +1,6 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
-#include "imgui.h"
 #include <vulkan/vk_enum_string_helper.h>
-
-// extending imgui with some helper functions
-namespace ImGui {
-    inline bool SliderDouble(const char* label, double* v, double v_min, double v_max, const char* format = "%.3f", ImGuiSliderFlags flags = 0)
-    {
-        return SliderScalar(label, ImGuiDataType_Double, v, &v_min, &v_max, format, flags);
-    }
-}
 
 namespace spock {
     inline VkImageSubresourceRange image_subresource_range(VkImageAspectFlags aspectMask) {
