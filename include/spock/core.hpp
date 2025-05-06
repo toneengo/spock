@@ -51,4 +51,5 @@ namespace spock {
     VkCommandBuffer       get_immediate_command_buffer();
     void                  begin_immediate_command();
     void                  end_immediate_command();
+
 }

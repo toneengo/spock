@@ -33,6 +33,13 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_push_constant_ranges(std::
     return *this;
 }
 
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_color_attachments(int attachmentCount, void* images)
+{
+    colorAttachments.resize(attachmentCount);
+    memcpy(colorAttachments.data(), images, sizeof(spock::Image) * attachmentCount);
+    return *this;
+}
+
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_color_attachments(std::initializer_list<spock::Image> images)
 {
     colorAttachments = images;

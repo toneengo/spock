@@ -63,6 +63,7 @@ struct GraphicsPipelineBuilder {
 
     GraphicsPipelineBuilder& set_descriptor_set_layouts(std::initializer_list<VkDescriptorSetLayout> dsLayouts);
     GraphicsPipelineBuilder& set_push_constant_ranges(std::initializer_list<VkPushConstantRange> ranges);
+    GraphicsPipelineBuilder& set_color_attachments(int attachmentCount, void* images);
     GraphicsPipelineBuilder& set_color_attachments(std::initializer_list<spock::Image> images);
     GraphicsPipelineBuilder& set_depth_attachment(spock::Image image);
     GraphicsPipelineBuilder& set_stencil_attachment(spock::Image image);

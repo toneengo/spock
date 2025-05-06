@@ -1,6 +1,7 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
 #include <vulkan/vk_enum_string_helper.h>
+#include <cassert>
 
 namespace spock {
     inline VkImageSubresourceRange image_subresource_range(VkImageAspectFlags aspectMask) {
@@ -113,7 +114,84 @@ namespace spock {
         vkCmdSetScissor(cmd, 0, 1, &scissor);
     }
 
+    struct RenderingAttachmentInfo {
+        VkImageView imageView = VK_NULL_HANDLE;
+        bool clear = false;
+        VkClearValue clearValue = {};
+    };
 
+    /*
+    Simple dynamic rendering start, image layouts default to COLOR_ATTACHMENT_OPTIMAL, etc.
+    end_dynamic_rendering must follow.
+     *replaces:
+        VkRenderingAttachmentInfo colorAttachment = info::color_attachment(spock::ctx.swapchain.imageViews[swapchainImageIndex], nullptr, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
+        VkRenderingInfo           renderInfo      = info::rendering(spock::ctx.swapchain.extent, &colorAttachment, nullptr);
+        vkCmdBeginRendering(cmd, &renderInfo);
+    */
+    inline void begin_dynamic_rendering(VkCommandBuffer cmd, VkExtent2D extent, std::initializer_list<RenderingAttachmentInfo> color, RenderingAttachmentInfo depth = {}, RenderingAttachmentInfo stencil = {}, VkRenderingFlags flags = 0)
+    {
+        //max 16 color attachments
+        VkRenderingAttachmentInfo colorAttachments[16];
+        VkRenderingAttachmentInfo depthAttachment = {};
+        VkRenderingAttachmentInfo stencilAttachment = {};
+        int i = 0;
+        for (auto& c : color)
+        {
+            colorAttachments[i++] = {
+                .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+                .pNext       = nullptr,
+                .imageView   = c.imageView,
+                .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                .loadOp      = c.clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD,
+                .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
+                .clearValue  = c.clearValue,
+            };
+        }
+
+        if (depth.imageView != VK_NULL_HANDLE)
+        {
+            depthAttachment = {
+                .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+                .pNext       = nullptr,
+                .imageView   = depthAttachment.imageView,
+                .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
+                .loadOp      = depth.clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD,
+                .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
+                .clearValue  = depth.clearValue,
+            };
+        }
+
+        if (stencil.imageView != VK_NULL_HANDLE)
+        {
+            stencilAttachment = {
+                .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+                .pNext       = nullptr,
+                .imageView   = stencilAttachment.imageView,
+                .imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
+                .loadOp      = stencil.clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD,
+                .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
+                .clearValue  = stencil.clearValue,
+            };
+        }
+
+        VkRenderingInfo renderingInfo{};
+        renderingInfo.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        renderingInfo.pNext                = nullptr;
+        renderingInfo.flags                = flags;
+        renderingInfo.renderArea           = {0, 0, extent.width, extent.height};
+        renderingInfo.layerCount           = 1;
+        renderingInfo.viewMask             = 0;
+        renderingInfo.colorAttachmentCount = i;
+        renderingInfo.pColorAttachments    = i == 0 ? nullptr : colorAttachments;
+        renderingInfo.pDepthAttachment     = depth.imageView == VK_NULL_HANDLE ? nullptr : &depthAttachment;
+        renderingInfo.pStencilAttachment   = stencil.imageView == VK_NULL_HANDLE ? nullptr : &stencilAttachment;
+        vkCmdBeginRendering(cmd, &renderingInfo);
+    }
+
+    inline void end_dynamic_rendering(VkCommandBuffer cmd)
+    {
+        vkCmdEndRendering(cmd);
+    }
 #define VK_CHECK(x)                                                     \
     do {                                                                \
         VkResult err = x;                                               \
@@ -123,27 +201,26 @@ namespace spock {
         }                                                               \
     } while (0)
 
-inline void log_line(const char* source)
-{
-    char buf[512];
-
-    uint32_t linenum = 1;
-    uint32_t bufpos = 0;
-
-    for (const char* c = source; *c; c++)
+    inline void log_line(const char* source)
     {
-        assert(bufpos < 512);
-        if (*c == '\n')
-        {
-            buf[bufpos] = '\0';
-            printf("%5u | %s\n", linenum, buf);
-            linenum++;
-            bufpos = 0;
-            continue;
-        }
-        
-        buf[bufpos++] = *c;
-    }
-}
+        char buf[512];
 
+        uint32_t linenum = 1;
+        uint32_t bufpos = 0;
+
+        for (const char* c = source; *c; c++)
+        {
+            assert(bufpos < 512);
+            if (*c == '\n')
+            {
+                buf[bufpos] = '\0';
+                printf("%5u | %s\n", linenum, buf);
+                linenum++;
+                bufpos = 0;
+                continue;
+            }
+            
+            buf[bufpos++] = *c;
+        }
+    }
 }

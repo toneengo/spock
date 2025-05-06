@@ -10,7 +10,15 @@
 
 void error_exit();
 //Shaders
+
 //from glslang repo
+// If no path markers, return current working directory.
+// Otherwise, strip file name and return path leading up to it.
+std::string getDirectory(const std::string path) {
+    size_t last = path.find_last_of("/\\");
+    return last == std::string::npos ? "." : path.substr(0, last);
+}
+
 class DirStackFileIncluder : public glslang::TShader::Includer {
   public:
     DirStackFileIncluder() : externalLocalDirectoryCount(0) {}
@@ -91,19 +99,13 @@ class DirStackFileIncluder : public glslang::TShader::Includer {
         return new IncludeResult(path, content, length, content);
     }
 
-    // If no path markers, return current working directory.
-    // Otherwise, strip file name and return path leading up to it.
-    virtual std::string getDirectory(const std::string path) const {
-        size_t last = path.find_last_of("/\\");
-        return last == std::string::npos ? "." : path.substr(0, last);
-    }
 };
 
-static std::vector<uint32_t> compileShaderToSPIRV_Vulkan(const char* const* shaderSource, EShLanguage stage) {
+
+static std::vector<uint32_t> compileShaderToSPIRV_Vulkan(const char* const* shaderSource, EShLanguage stage, const char* filePath) {
     glslang::InitializeProcess();
     DirStackFileIncluder includer;
-//#TODO: PLZ DONT HARDCODE  assets/shaders 
-    includer.pushExternalLocalDirectory("assets/shaders");
+    includer.pushExternalLocalDirectory(getDirectory(filePath));
 
     glslang::TShader shader(stage);
     shader.setDebugInfo(true);
@@ -163,7 +165,7 @@ VkShaderModule              spock::create_shader_module(const char* filePath) {
     buf[i] = 0;
     file.close();
 
-    auto spirv = compileShaderToSPIRV_Vulkan(&buf, stage);
+    auto spirv = compileShaderToSPIRV_Vulkan(&buf, stage, filePath);
     if (spirv.size() == 0) {
         printf("Error compiling %s\n", filePath);
         error_exit();
