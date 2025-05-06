@@ -1,6 +1,7 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
 #include "imgui.h"
+#include <vulkan/vk_enum_string_helper.h>
 
 // extending imgui with some helper functions
 namespace ImGui {
@@ -111,9 +112,7 @@ namespace spock {
         vkCmdSetScissor(cmd, 0, 1, &scissor);
     }
 
-}
 
-#include <vulkan/vk_enum_string_helper.h>
 #define VK_CHECK(x)                                                     \
     do {                                                                \
         VkResult err = x;                                               \
@@ -144,4 +143,6 @@ inline void log_line(const char* source)
         
         buf[bufpos++] = *c;
     }
+}
+
 }
