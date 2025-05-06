@@ -35,12 +35,19 @@ namespace spock {
     
     void                  cleanup();
     VkDescriptorSetLayout create_descriptor_set_layout(std::initializer_list<Binding> _bindings, VkShaderStageFlags shaderStages, VkDescriptorSetLayoutCreateFlags flags = 0);
+
     Image                 create_image_from_pixels(void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped = false);
+
     Image                 create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped = false);
+    inline Image          create_image(VkExtent2D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped = false)
+        { return create_image(VkExtent3D{.width = size.width, .height = size.height, 1}, format, usage, mipmapped); }
+
     Image                 create_image(void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped = false);
     Image                 create_image(const char* fileName, VkImageUsageFlags usage, bool mipmapped = false);
+
     Image                 create_texture(const char* fileName, uint32_t index, VkDescriptorSet descriptorSet, uint32_t binding, VkSampler sampler, VkImageUsageFlags usage, bool mipmapped = false);
     void                  create_texture(Image& image, uint32_t index, VkDescriptorSet descriptorSet, uint32_t binding, VkSampler sampler);
+
     void                  destroy_image(Image image);
 
     Buffer                create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);

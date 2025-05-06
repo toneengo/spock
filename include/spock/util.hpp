@@ -60,16 +60,31 @@ namespace spock {
         vkCmdClearColorImage(cmd, image, layout, &color, 1, &subImage);
     }
 
-    inline void blit(VkCommandBuffer cmd, VkImage src, VkImage dst, VkExtent2D srcSize, VkExtent2D dstSize) {
+    inline void blit(VkCommandBuffer cmd, VkImage src, VkImage dst, VkRect2D srcRect, VkRect2D dstRect) {
         VkImageBlit2 blitRegion{.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2, .pNext = nullptr};
 
-        blitRegion.srcOffsets[1].x = srcSize.width;
-        blitRegion.srcOffsets[1].y = srcSize.height;
+        blitRegion.srcOffsets[0].x = srcRect.offset.x;
+        blitRegion.srcOffsets[0].y = srcRect.offset.y;
+        blitRegion.srcOffsets[0].z = 0;
+
+        blitRegion.dstOffsets[0].x = dstRect.offset.x;
+        blitRegion.dstOffsets[0].y = dstRect.offset.y;
+        blitRegion.dstOffsets[0].z = 0;
+
+        blitRegion.srcOffsets[1].x = srcRect.offset.x + srcRect.extent.width;
+        blitRegion.srcOffsets[1].y = srcRect.offset.y + srcRect.extent.height;
         blitRegion.srcOffsets[1].z = 1;
 
-        blitRegion.dstOffsets[1].x = dstSize.width;
-        blitRegion.dstOffsets[1].y = dstSize.height;
+        blitRegion.dstOffsets[1].x = dstRect.offset.x + dstRect.extent.width;
+        blitRegion.dstOffsets[1].y = dstRect.offset.y + dstRect.extent.height;
         blitRegion.dstOffsets[1].z = 1;
+
+        /*
+        auto& a = blitRegion.srcOffsets;
+        auto& b = blitRegion.dstOffsets;
+        printf("src region: %d, %d, %d, %d\n", a[0].x, a[0].y, a[1].x, a[1].y);
+        printf("dst region: %d, %d, %d, %d\n\n", b[0].x, b[0].y, b[1].x, b[1].y);
+        */
 
         blitRegion.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
         blitRegion.srcSubresource.baseArrayLayer = 0;
@@ -153,7 +168,7 @@ namespace spock {
             depthAttachment = {
                 .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
                 .pNext       = nullptr,
-                .imageView   = depthAttachment.imageView,
+                .imageView   = depth.imageView,
                 .imageLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
                 .loadOp      = depth.clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD,
                 .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,
@@ -166,7 +181,7 @@ namespace spock {
             stencilAttachment = {
                 .sType       = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
                 .pNext       = nullptr,
-                .imageView   = stencilAttachment.imageView,
+                .imageView   = stencil.imageView,
                 .imageLayout = VK_IMAGE_LAYOUT_STENCIL_ATTACHMENT_OPTIMAL,
                 .loadOp      = stencil.clear ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD,
                 .storeOp     = VK_ATTACHMENT_STORE_OP_STORE,

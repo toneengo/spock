@@ -49,7 +49,7 @@ namespace spock {
         VkExtent3D      screenExtent; //desktop resolution
         float           renderScale = 1.f;
 
-        VkExtent2D      extent; //framebufufer size
+        VkExtent2D      extent; //swapchain image size
 
         struct Swapchain {
             VkSwapchainKHR           swapchain;
