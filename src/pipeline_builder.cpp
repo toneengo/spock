@@ -92,6 +92,15 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_color_blend_states(std::in
     return *this;
 }
 
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_all_color_blend_states(VkPipelineColorBlendAttachmentState state) {
+    colorBlendAttachmentStates.resize(colorAttachments.size());
+    for (auto& s : colorBlendAttachmentStates)
+    {
+        s = state;
+    }
+    return *this;
+}
+
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_input_assembly_state(VkPrimitiveTopology topology, bool primitiveRestartEnable) {
     inputAssemblyState.sType                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssemblyState.topology               = topology;

@@ -71,6 +71,7 @@ struct GraphicsPipelineBuilder {
     GraphicsPipelineBuilder& set_shader_stages(std::initializer_list<ShaderStage> shaderStages);
     GraphicsPipelineBuilder& set_viewport_state(uint32_t viewportCount = 1, uint32_t scissorCount = 1, VkViewport* viewports = VK_NULL_HANDLE, VkRect2D* scissors = VK_NULL_HANDLE);
     GraphicsPipelineBuilder& set_color_blend_states(std::initializer_list<VkPipelineColorBlendAttachmentState> attachments);
+    GraphicsPipelineBuilder& set_all_color_blend_states(VkPipelineColorBlendAttachmentState state);
     GraphicsPipelineBuilder& set_input_assembly_state(VkPrimitiveTopology topology, bool primitiveRestartEnable = false);
     GraphicsPipelineBuilder& set_rasterization_state(VkPolygonMode polygonMode, float lineWidth, VkCullModeFlags cullMode, VkFrontFace frontFace);
     GraphicsPipelineBuilder& set_multisample_state();
