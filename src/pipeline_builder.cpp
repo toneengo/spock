@@ -2,6 +2,7 @@
 #include "spock/internal.hpp"
 #include "spock/util.hpp"
 #include <vulkan/vulkan_core.h>
+#include <cstring>
 
 VkPipelineColorBlendAttachmentState color_blend(Blend color, Blend alpha) {
     return {
