@@ -1,5 +1,5 @@
-#include "destroy.hpp"
-#include "internal.hpp"
+#include "spock/destroy.hpp"
+#include "spock/internal.hpp"
 #include <cstdio>
 
 void spock::Object::destroy() {

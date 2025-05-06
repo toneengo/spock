@@ -1,6 +1,6 @@
-#include "pipeline_builder.hpp"
-#include "internal.hpp"
-#include "util.hpp"
+#include "spock/pipeline_builder.hpp"
+#include "spock/internal.hpp"
+#include "spock/util.hpp"
 #include <vulkan/vulkan_core.h>
 
 VkPipelineColorBlendAttachmentState color_blend(Blend color, Blend alpha) {

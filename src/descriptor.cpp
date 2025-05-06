@@ -1,6 +1,6 @@
-#include "descriptor.hpp"
-#include "internal.hpp"
-#include "util.hpp"
+#include "spock/descriptor.hpp"
+#include "spock/internal.hpp"
+#include "spock/util.hpp"
 
 using namespace spock;
 

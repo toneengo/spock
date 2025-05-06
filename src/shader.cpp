@@ -4,9 +4,9 @@
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/Public/ResourceLimits.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
-#include "internal.hpp"
+#include "spock/internal.hpp"
 
-#include "shader.hpp"
+#include "spock/shader.hpp"
 
 void error_exit();
 //Shaders

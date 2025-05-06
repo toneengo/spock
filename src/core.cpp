@@ -4,7 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
-#include "info.hpp"
+#include "spock/info.hpp"
 
 #include "vk_mem_alloc.h"
 
@@ -13,12 +13,12 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-#include "util.hpp"
-#include "core.hpp"
-#include "internal.hpp"
-#include "destroy.hpp"
-#include "shader.hpp"
-#include "util.hpp"
+#include "spock/util.hpp"
+#include "spock/core.hpp"
+#include "spock/internal.hpp"
+#include "spock/destroy.hpp"
+#include "spock/shader.hpp"
+#include "spock/util.hpp"
 
 #ifdef DBG
 const bool gEnableValidationLayers = true;
