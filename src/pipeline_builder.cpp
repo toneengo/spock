@@ -33,8 +33,24 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_push_constant_ranges(std::
     return *this;
 }
 
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_framebuffer(spock::Framebuffer fb) {
-    framebuffer = fb;
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_color_attachments(std::initializer_list<spock::Image> images)
+{
+    colorAttachments = images;
+    return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_depth_attachment(spock::Image image) {
+    depthAttachment = image;
+    return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_stencil_attachment(spock::Image image) {
+    stencilAttachment = image;
+    return *this;
+}
+
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_view_mask(uint32_t _viewMask) {
+    viewMask = _viewMask;
     return *this;
 }
 
@@ -164,17 +180,17 @@ VkPipeline GraphicsPipelineBuilder::build() {
     VkGraphicsPipelineCreateInfo info = {};
     info.sType                        = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     std::vector<VkFormat> colorAttachmentFormats;
-    for (auto& c : framebuffer.color) {
+    for (auto& c : colorAttachments) {
         colorAttachmentFormats.push_back(c.imageFormat);
     }
     VkPipelineRenderingCreateInfo _r = {
         .sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
         .pNext                   = VK_NULL_HANDLE,
-        .viewMask                = framebuffer.viewMask,
+        .viewMask                = viewMask,
         .colorAttachmentCount    = uint32_t(colorAttachmentFormats.size()),
         .pColorAttachmentFormats = colorAttachmentFormats.data(),
-        .depthAttachmentFormat   = framebuffer.depth.imageFormat,
-        .stencilAttachmentFormat = framebuffer.stencil.imageFormat,
+        .depthAttachmentFormat   = depthAttachment.imageFormat,
+        .stencilAttachmentFormat = stencilAttachment.imageFormat,
     };
     info.pNext                             = &_r;
     info.flags                             = flags;

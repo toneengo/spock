@@ -25,13 +25,4 @@ namespace spock {
         VmaAllocation     allocation;
         VmaAllocationInfo info;
     };
-
-    //since we use dynamic rendering, VkFramebuffer isn't used, instead we have a collection of color/depth/stencil attchments
-    //#TODO: get rid of this plz famebuffer is a bad name
-    struct Framebuffer {
-        std::vector<Image> color;
-        Image              depth;
-        Image              stencil;
-        uint32_t           viewMask;
-    };
 }

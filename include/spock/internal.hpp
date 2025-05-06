@@ -67,7 +67,6 @@ namespace spock {
         uint32_t textureCount = 0;
         */
 
-        Framebuffer          framebuffer; //main framebuffer
         Swapchain            swapchain;
         spock::DestroyQueue destroyQueue;
     } ctx;

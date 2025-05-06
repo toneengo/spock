@@ -125,18 +125,6 @@ static void init_device() {
 static void init_swapchain() {
     //initialize swapchain
     create_swapchain(ctx.windowExtent.width, ctx.windowExtent.height);
-    //initialize main framebuffer
-    ctx.framebuffer.color.resize(1);
-    ctx.framebuffer.color[0] = create_image(ctx.screenExtent, VK_FORMAT_R16G16B16A16_SFLOAT,
-                                            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    ctx.framebuffer.depth    = create_image(ctx.screenExtent, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-
-    for (const auto& image : ctx.framebuffer.color) {
-        QUEUE_DESTROY_OBJ(image);
-        QUEUE_DESTROY_OBJ(image.imageView);
-    }
-    QUEUE_DESTROY_OBJ(ctx.framebuffer.depth);
-    QUEUE_DESTROY_OBJ(ctx.framebuffer.depth.imageView);
 }
 
 void init_commands() {
@@ -408,6 +396,11 @@ Image spock::create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags us
     return newImage;
 }
 
+void spock::destroy_image(Image image)
+{
+    vmaDestroyImage(spock::ctx.allocator, image.image, image.allocation);
+    vkDestroyImageView(spock::ctx.device, image.imageView, nullptr);
+}
 void spock::create_swapchain(uint32_t width, uint32_t height) {
     vkb::SwapchainBuilder swapchainBuilder{ctx.physicalDevice, ctx.device, ctx.surface};
     ctx.swapchain.imageFormat   = VK_FORMAT_B8G8R8A8_UNORM;

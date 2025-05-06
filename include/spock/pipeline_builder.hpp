@@ -36,7 +36,10 @@ struct ComputePipelineBuilder {
 struct GraphicsPipelineBuilder {
     std::vector<VkDescriptorSetLayout>               descriptorSetLayouts;
     std::vector<VkPushConstantRange>                 pushConstantRanges;
-    spock::Framebuffer                              framebuffer;
+    std::vector<spock::Image>                        colorAttachments;
+    spock::Image                                     depthAttachment;
+    spock::Image                                     stencilAttachment;
+    uint32_t                                         viewMask;
     VkPipelineCreateFlags                            flags = 0;
     std::vector<VkPipelineShaderStageCreateInfo>     stages;
     VkPipelineVertexInputStateCreateInfo             vertexInputState   = {.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
@@ -60,7 +63,10 @@ struct GraphicsPipelineBuilder {
 
     GraphicsPipelineBuilder& set_descriptor_set_layouts(std::initializer_list<VkDescriptorSetLayout> dsLayouts);
     GraphicsPipelineBuilder& set_push_constant_ranges(std::initializer_list<VkPushConstantRange> ranges);
-    GraphicsPipelineBuilder& set_framebuffer(spock::Framebuffer framebuffer);
+    GraphicsPipelineBuilder& set_color_attachments(std::initializer_list<spock::Image> images);
+    GraphicsPipelineBuilder& set_depth_attachment(spock::Image image);
+    GraphicsPipelineBuilder& set_stencil_attachment(spock::Image image);
+    GraphicsPipelineBuilder& set_view_mask(uint32_t _viewMask);
     GraphicsPipelineBuilder& set_shader_stages(std::initializer_list<ShaderStage> shaderStages);
     GraphicsPipelineBuilder& set_viewport_state(uint32_t viewportCount = 1, uint32_t scissorCount = 1, VkViewport* viewports = VK_NULL_HANDLE, VkRect2D* scissors = VK_NULL_HANDLE);
     GraphicsPipelineBuilder& set_color_blend_states(std::initializer_list<VkPipelineColorBlendAttachmentState> attachments);

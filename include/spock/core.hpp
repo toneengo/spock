@@ -41,13 +41,12 @@ namespace spock {
     Image                 create_image(const char* fileName, VkImageUsageFlags usage, bool mipmapped = false);
     Image                 create_texture(const char* fileName, uint32_t index, VkDescriptorSet descriptorSet, uint32_t binding, VkSampler sampler, VkImageUsageFlags usage, bool mipmapped = false);
     void                  create_texture(Image& image, uint32_t index, VkDescriptorSet descriptorSet, uint32_t binding, VkSampler sampler);
-    Buffer                create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
-    void                  create_swapchain(uint32_t width, uint32_t height);
-    
-    void                  set_scissor(); 
-
     void                  destroy_image(Image image);
+
+    Buffer                create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
     void                  destroy_buffer(Buffer buffer);
+
+    void                  create_swapchain(uint32_t width, uint32_t height);
 
     VkCommandBuffer       get_immediate_command_buffer();
     void                  begin_immediate_command();
