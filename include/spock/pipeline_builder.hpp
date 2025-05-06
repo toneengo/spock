@@ -39,7 +39,7 @@ struct GraphicsPipelineBuilder {
     std::vector<spock::Image>                        colorAttachments;
     spock::Image                                     depthAttachment;
     spock::Image                                     stencilAttachment;
-    uint32_t                                         viewMask;
+    uint32_t                                         viewMask = 0;
     VkPipelineCreateFlags                            flags = 0;
     std::vector<VkPipelineShaderStageCreateInfo>     stages;
     VkPipelineVertexInputStateCreateInfo             vertexInputState   = {.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
