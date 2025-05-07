@@ -45,7 +45,13 @@ struct GraphicsPipelineBuilder {
     VkPipelineVertexInputStateCreateInfo             vertexInputState   = {.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
     VkPipelineInputAssemblyStateCreateInfo           inputAssemblyState = {.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
     VkPipelineTessellationStateCreateInfo            tessellationState  = {.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO};
-    VkPipelineViewportStateCreateInfo                viewportState      = {.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO};
+    VkPipelineViewportStateCreateInfo                viewportState      = {.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+                                                                           .pNext = nullptr,
+                                                                           .flags = 0,
+                                                                           .viewportCount = 1,
+                                                                           .pViewports = nullptr,
+                                                                           .scissorCount = 1,
+                                                                           .pScissors = nullptr};
     VkPipelineRasterizationStateCreateInfo           rasterizationState = {.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
     VkPipelineMultisampleStateCreateInfo             multisampleState   = {.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
     VkPipelineDepthStencilStateCreateInfo            depthStencilState  = {.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};

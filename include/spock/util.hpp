@@ -1,6 +1,5 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
-#include <vulkan/vk_enum_string_helper.h>
 #include <cassert>
 
 namespace spock {
@@ -60,7 +59,7 @@ namespace spock {
         vkCmdClearColorImage(cmd, image, layout, &color, 1, &subImage);
     }
 
-    inline void blit(VkCommandBuffer cmd, VkImage src, VkImage dst, VkRect2D srcRect, VkRect2D dstRect) {
+    inline void blit(VkCommandBuffer cmd, VkImage src, VkImage dst, VkRect2D srcRect, VkRect2D dstRect, VkFilter filter) {
         VkImageBlit2 blitRegion{.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2, .pNext = nullptr};
 
         blitRegion.srcOffsets[0].x = srcRect.offset.x;
@@ -101,7 +100,7 @@ namespace spock {
         blitInfo.dstImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
         blitInfo.srcImage       = src;
         blitInfo.srcImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        blitInfo.filter         = VK_FILTER_LINEAR;
+        blitInfo.filter         = filter;
         blitInfo.regionCount    = 1;
         blitInfo.pRegions       = &blitRegion;
 
@@ -211,7 +210,7 @@ namespace spock {
     do {                                                                \
         VkResult err = x;                                               \
         if (err) {                                                      \
-            printf("Detected Vulkan error: %s", string_VkResult(err)); \
+            printf("Detected Vulkan error: %d\n", err); \
             abort();                                                    \
         }                                                               \
     } while (0)

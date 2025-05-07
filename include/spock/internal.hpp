@@ -89,7 +89,7 @@ namespace spock {
         spock::destroyQueue.push(o);                                                                                                                                              \
     } while (0);
 #else
-#define QUEUE_DESTROY_OBJ(x) destroyQueue.push(x);
+#define QUEUE_DESTROY_OBJ(x) spock::destroyQueue.push(x);
 #endif
 
 }
