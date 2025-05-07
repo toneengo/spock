@@ -1,6 +1,8 @@
 #pragma once
 #include <vulkan/vulkan_core.h>
 #include <cassert>
+#include <cstdio>
+#include <initializer_list>
 
 namespace spock {
     inline VkImageSubresourceRange image_subresource_range(VkImageAspectFlags aspectMask) {
