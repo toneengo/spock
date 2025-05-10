@@ -374,6 +374,8 @@ void spock::create_texture(Image& image, uint32_t index, VkDescriptorSet descrip
 Image spock::create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped) {
     Image newImage;
     newImage.imageFormat = format;
+
+    //not the actual extent of the image, just the user input
     newImage.imageExtent = size;
 
     VkImageCreateInfo img_info = info::create::image(format, usage, size);
@@ -390,52 +392,61 @@ Image spock::create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags us
     switch (viewType)
     {
         case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
-            img_info.imageType = VK_IMAGE_TYPE_2D;
-            img_info.arrayLayers = 1;
-            subresourceRange.layerCount = size.height;
             assert(size.depth <= 1);
+            img_info.imageType = VK_IMAGE_TYPE_1D;
+            img_info.arrayLayers = size.height;
+            img_info.extent = {size.width, 1, 1};
+            subresourceRange.layerCount = size.height;
             break;
 
         case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
             img_info.imageType = VK_IMAGE_TYPE_2D;
             img_info.arrayLayers = size.depth;
+            img_info.extent = {size.width, size.height, 1};
             subresourceRange.layerCount = size.depth;
             break;
 
         case VK_IMAGE_VIEW_TYPE_2D:
+            assert(size.depth <= 1);
             img_info.imageType = VK_IMAGE_TYPE_2D;
             img_info.arrayLayers = 1;
             subresourceRange.layerCount = 1;
-            assert(size.depth <= 1);
+            img_info.extent = {size.width, size.height, 1};
             break;
 
         case VK_IMAGE_VIEW_TYPE_1D:
+            assert(size.height <= 1 && size.depth <= 1);
             img_info.imageType = VK_IMAGE_TYPE_1D;
             img_info.arrayLayers = 1;
             subresourceRange.layerCount = 1;
-            assert(size.height <= 1);
+            img_info.extent = {size.width, 1, 1};
             break;
 
         //idk if these are right
         case VK_IMAGE_VIEW_TYPE_3D:
             img_info.imageType = VK_IMAGE_TYPE_3D;
             img_info.arrayLayers = 1;
+            img_info.extent = {size.width, size.height, size.depth};
+            subresourceRange.layerCount = 1;
             break;
         case VK_IMAGE_VIEW_TYPE_CUBE:
+            assert(size.depth <= 1);
             img_info.imageType = VK_IMAGE_TYPE_2D;
             img_info.arrayLayers = 6;
+            img_info.extent = {size.width, size.height, 1};
+            subresourceRange.layerCount = 6;
             break;
 
         case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
             img_info.imageType = VK_IMAGE_TYPE_2D;
-            img_info.arrayLayers = size.depth / 6;
+            img_info.arrayLayers = size.depth * 6;
+            img_info.extent = {size.width, size.height, 1};
+            subresourceRange.layerCount = size.depth * 6;
             break;
 
 
         default:
     }
-
-    img_info.extent = size;
 
     // if the format is a depth format, we will need to have it use the correct
     // aspect flag
