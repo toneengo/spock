@@ -93,6 +93,7 @@ static void init_device() {
     //vulkan 1.2 features
     VkPhysicalDeviceVulkan12Features features12{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
     features12.bufferDeviceAddress                           = true;
+    features12.shaderOutputViewportIndex                     = true;
     features12.descriptorIndexing                            = true;
     features12.runtimeDescriptorArray                        = true;
     features12.shaderUniformBufferArrayNonUniformIndexing    = true;
@@ -102,9 +103,16 @@ static void init_device() {
     features12.descriptorBindingStorageBufferUpdateAfterBind = true;
     features12.descriptorBindingStorageImageUpdateAfterBind  = true;
 
+    VkPhysicalDeviceVulkan11Features features11{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
+    features11.multiview = true;
+
     vkb::PhysicalDeviceSelector selector{vkb_inst};
-    vkb::PhysicalDevice         physical_device =
-        selector.set_minimum_version(1, 3).set_required_features_13(features).set_required_features_12(features12).set_surface(ctx.surface).select().value();
+    vkb::PhysicalDevice         physical_device = selector
+        .set_minimum_version(1, 3)
+        .set_required_features_13(features)
+        .set_required_features_12(features12)
+        .set_required_features_11(features11)
+        .set_surface(ctx.surface).select().value();
 
     vkb::DeviceBuilder device_builder{physical_device};
     vkb::Device        vkb_device = device_builder.build().value();
@@ -280,13 +288,13 @@ Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemor
     return buffer;
 }
 
-Image spock::create_image(void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped) {
+Image spock::create_image(void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped) {
     size_t data_size    = size.depth * size.width * size.height * 4;
     Buffer uploadbuffer = create_buffer(data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
     memcpy(uploadbuffer.info.pMappedData, data, data_size);
 
-    Image new_image = create_image(size, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, mipmapped);
+    Image new_image = create_image(size, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, viewType, mipmapped);
 
     begin_immediate_command();
     image_barrier(ctx.immCommandBuffer, new_image.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -313,7 +321,7 @@ Image spock::create_image(void* data, VkExtent3D size, VkFormat format, VkImageU
     return new_image;
 }
 
-Image spock::create_image(const char* fileName, VkImageUsageFlags usage, bool mipmapped)
+Image spock::create_image(const char* fileName, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped)
 {
     VkExtent3D     extent{};
     int            width = 0, height = 0;
@@ -338,14 +346,14 @@ Image spock::create_image(const char* fileName, VkImageUsageFlags usage, bool mi
         extent.depth          = 1;
     }
 
-    auto image = create_image(pixels, extent, VK_FORMAT_R8G8B8A8_UNORM, usage, mipmapped);
+    auto image = create_image(pixels, extent, VK_FORMAT_R8G8B8A8_UNORM, usage, viewType, mipmapped);
     if (empty) free(pixels);
     else stbi_image_free(pixels);
     return image;
 }
 
-Image spock::create_texture(const char* fileName, uint32_t index, VkDescriptorSet descriptorSet, uint32_t binding, VkSampler sampler, VkImageUsageFlags usage, bool mipmapped) {
-    auto image = create_image(fileName, usage, mipmapped);
+Image spock::create_texture(const char* fileName, uint32_t index, VkDescriptorSet descriptorSet, uint32_t binding, VkSampler sampler, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped) {
+    auto image = create_image(fileName, usage, viewType, mipmapped);
     update_descriptor_sets(
         {{descriptorSet, binding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, sampler, image.imageView, VK_IMAGE_LAYOUT_GENERAL, index}}, {});
 
@@ -363,7 +371,7 @@ void spock::create_texture(Image& image, uint32_t index, VkDescriptorSet descrip
         {{descriptorSet, binding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, sampler, image.imageView, VK_IMAGE_LAYOUT_GENERAL, index}}, {});
 }
 
-Image spock::create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags usage, bool mipmapped) {
+Image spock::create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped) {
     Image newImage;
     newImage.imageFormat = format;
     newImage.imageExtent = size;
@@ -373,6 +381,69 @@ Image spock::create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags us
         img_info.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(size.width, size.height)))) + 1;
     }
 
+    VkImageSubresourceRange subresourceRange {
+        .baseMipLevel = 0,
+        .levelCount = img_info.mipLevels,
+        .baseArrayLayer = 0,
+    };
+
+    switch (viewType)
+    {
+        case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
+            img_info.imageType = VK_IMAGE_TYPE_2D;
+            img_info.arrayLayers = 1;
+            subresourceRange.layerCount = size.height;
+            assert(size.depth <= 1);
+            break;
+
+        case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
+            img_info.imageType = VK_IMAGE_TYPE_2D;
+            img_info.arrayLayers = size.depth;
+            subresourceRange.layerCount = size.depth;
+            break;
+
+        case VK_IMAGE_VIEW_TYPE_2D:
+            img_info.imageType = VK_IMAGE_TYPE_2D;
+            img_info.arrayLayers = 1;
+            subresourceRange.layerCount = 1;
+            assert(size.depth <= 1);
+            break;
+
+        case VK_IMAGE_VIEW_TYPE_1D:
+            img_info.imageType = VK_IMAGE_TYPE_1D;
+            img_info.arrayLayers = 1;
+            subresourceRange.layerCount = 1;
+            assert(size.height <= 1);
+            break;
+
+        //idk if these are right
+        case VK_IMAGE_VIEW_TYPE_3D:
+            img_info.imageType = VK_IMAGE_TYPE_3D;
+            img_info.arrayLayers = 1;
+            break;
+        case VK_IMAGE_VIEW_TYPE_CUBE:
+            img_info.imageType = VK_IMAGE_TYPE_2D;
+            img_info.arrayLayers = 6;
+            break;
+
+        case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
+            img_info.imageType = VK_IMAGE_TYPE_2D;
+            img_info.arrayLayers = size.depth / 6;
+            break;
+
+
+        default:
+    }
+
+    img_info.extent = size;
+
+    // if the format is a depth format, we will need to have it use the correct
+    // aspect flag
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    if (format == VK_FORMAT_D32_SFLOAT) {
+        subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    }
+
     // always allocate images on dedicated GPU memory
     VmaAllocationCreateInfo allocinfo = {};
     allocinfo.usage                   = VMA_MEMORY_USAGE_GPU_ONLY;
@@ -380,16 +451,8 @@ Image spock::create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags us
 
     VK_CHECK(vmaCreateImage(ctx.allocator, &img_info, &allocinfo, &newImage.image, &newImage.allocation, nullptr));
 
-    // if the format is a depth format, we will need to have it use the correct
-    // aspect flag
-    VkImageAspectFlags aspectFlag = VK_IMAGE_ASPECT_COLOR_BIT;
-    if (format == VK_FORMAT_D32_SFLOAT) {
-        aspectFlag = VK_IMAGE_ASPECT_DEPTH_BIT;
-    }
-
     // build a image-view for the image
-    VkImageViewCreateInfo view_info       = info::create::image_view(format, newImage.image, aspectFlag);
-    view_info.subresourceRange.levelCount = img_info.mipLevels;
+    VkImageViewCreateInfo view_info       = info::create::image_view(format, newImage.image, viewType, subresourceRange);
 
     VK_CHECK(vkCreateImageView(ctx.device, &view_info, nullptr, &newImage.imageView));
 

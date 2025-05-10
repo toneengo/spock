@@ -50,6 +50,33 @@ namespace spock {
 
         vkCmdPipelineBarrier2(cmd, &depInfo);
     }
+    inline void buffer_barrier(VkCommandBuffer cmd, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
+                              VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VkAccessFlags2 srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
+                              VkPipelineStageFlags2 dstStageMask  = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                              VkAccessFlags2        dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT) {
+        VkBufferMemoryBarrier2 bufferBarrier{
+            .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER_2,
+            .pNext = nullptr,
+            .srcStageMask = srcStageMask,
+            .srcAccessMask = srcAccessMask,
+            .dstStageMask = dstStageMask,
+            .dstAccessMask = dstAccessMask,
+            .buffer = buffer,
+            .offset = offset,
+            .size = size
+        };
+
+        VkDependencyInfo depInfo{
+            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+            .pNext = nullptr,
+            .imageMemoryBarrierCount = 0,
+            .bufferMemoryBarrierCount = 1,
+            .pBufferMemoryBarriers = &bufferBarrier
+        };
+
+        vkCmdPipelineBarrier2(cmd, &depInfo);
+    }
+
     inline void clear_image(VkCommandBuffer cmd, VkImage image, VkImageLayout layout, VkClearColorValue color) {
         VkImageSubresourceRange subImage{};
         subImage.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -144,7 +171,7 @@ namespace spock {
         VkRenderingInfo           renderInfo      = info::rendering(spock::ctx.swapchain.extent, &colorAttachment, nullptr);
         vkCmdBeginRendering(cmd, &renderInfo);
     */
-    inline void begin_dynamic_rendering(VkCommandBuffer cmd, VkExtent2D extent, std::initializer_list<RenderingAttachmentInfo> color, RenderingAttachmentInfo depth = {}, RenderingAttachmentInfo stencil = {}, VkRenderingFlags flags = 0)
+    inline void begin_dynamic_rendering(VkCommandBuffer cmd, VkExtent2D extent, std::initializer_list<RenderingAttachmentInfo> color, RenderingAttachmentInfo depth = {}, RenderingAttachmentInfo stencil = {}, uint32_t layerCount = 1, VkRenderingFlags flags = 0)
     {
         //max 16 color attachments
         VkRenderingAttachmentInfo colorAttachments[16];
@@ -195,7 +222,7 @@ namespace spock {
         renderingInfo.pNext                = nullptr;
         renderingInfo.flags                = flags;
         renderingInfo.renderArea           = {0, 0, extent.width, extent.height};
-        renderingInfo.layerCount           = 1;
+        renderingInfo.layerCount           = layerCount;
         renderingInfo.viewMask             = 0;
         renderingInfo.colorAttachmentCount = i;
         renderingInfo.pColorAttachments    = i == 0 ? nullptr : colorAttachments;

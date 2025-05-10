@@ -9,7 +9,7 @@ namespace info {
         VkFenceCreateInfo               fence(VkFenceCreateFlags flags = 0);
         VkSemaphoreCreateInfo           semaphore(VkSemaphoreCreateFlags flags = 0);
         VkImageCreateInfo               image(VkFormat format, VkImageUsageFlags usageFlags, VkExtent3D extent);
-        VkImageViewCreateInfo           image_view(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags);
+        VkImageViewCreateInfo           image_view(VkFormat format, VkImage image, VkImageViewType viewType, VkImageSubresourceRange srange);
         VkPipelineLayoutCreateInfo      pipeline_layout(std::initializer_list<VkDescriptorSetLayout> descriptorSetLayouts,
                                                         std::initializer_list<VkPushConstantRange>   pushConstantRanges);
         VkComputePipelineCreateInfo     compute_pipeline(VkPipelineLayout layout, VkPipelineShaderStageCreateInfo stage, VkPipelineCreateFlags flags = 0);

@@ -52,18 +52,18 @@ VkImageCreateInfo info::create::image(VkFormat format, VkImageUsageFlags usageFl
     return info;
 }
 
-VkImageViewCreateInfo info::create::image_view(VkFormat format, VkImage image, VkImageAspectFlags aspectFlags) {
+VkImageViewCreateInfo info::create::image_view(VkFormat format, VkImage image, VkImageViewType viewType, VkImageSubresourceRange srange) {
     VkImageViewCreateInfo info           = {};
     info.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     info.pNext                           = nullptr;
-    info.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+    info.viewType                        = viewType;
     info.image                           = image;
     info.format                          = format;
-    info.subresourceRange.baseMipLevel   = 0;
-    info.subresourceRange.levelCount     = 1;
-    info.subresourceRange.baseArrayLayer = 0;
-    info.subresourceRange.layerCount     = 1;
-    info.subresourceRange.aspectMask     = aspectFlags;
+    info.subresourceRange.baseMipLevel   = srange.baseMipLevel;
+    info.subresourceRange.levelCount     = srange.levelCount;
+    info.subresourceRange.baseArrayLayer = srange.baseArrayLayer;
+    info.subresourceRange.layerCount     = srange.layerCount;
+    info.subresourceRange.aspectMask     = srange.aspectMask;
     return info;
 }
 

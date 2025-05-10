@@ -198,6 +198,7 @@ VkPipeline GraphicsPipelineBuilder::build() {
     info.sType                        = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     std::vector<VkFormat> colorAttachmentFormats;
     for (auto& c : colorAttachments) {
+        //colorAttachmentFormats.push_back(c.imageFormat);
         colorAttachmentFormats.push_back(c.imageFormat);
     }
     VkPipelineRenderingCreateInfo _r = {
@@ -205,7 +206,7 @@ VkPipeline GraphicsPipelineBuilder::build() {
         .pNext                   = VK_NULL_HANDLE,
         .viewMask                = viewMask,
         .colorAttachmentCount    = uint32_t(colorAttachmentFormats.size()),
-        .pColorAttachmentFormats = colorAttachmentFormats.data(),
+        .pColorAttachmentFormats = colorAttachments.size() > 0 ? colorAttachmentFormats.data() : nullptr,
         .depthAttachmentFormat   = depthAttachment.imageFormat,
         .stencilAttachmentFormat = stencilAttachment.imageFormat,
     };
