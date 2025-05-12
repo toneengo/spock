@@ -19,7 +19,6 @@ struct Blend {
 VkPipelineColorBlendAttachmentState color_blend(Blend color, Blend alpha);
 VkPipelineColorBlendAttachmentState color_blend(); //disabled color blend
 
-//#TODO: maake it a inheritable class but who cares about that rn
 struct ComputePipelineBuilder {
     std::vector<VkDescriptorSetLayout> descriptorSetLayouts;
     std::vector<VkPushConstantRange>   pushConstantRanges;

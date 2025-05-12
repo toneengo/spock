@@ -71,7 +71,9 @@ namespace spock {
         spock::DestroyQueue destroyQueue;
     } ctx;
 
-
+    inline uint32_t         get_frame_number() {
+        return ctx.frameIdx % FRAME_OVERLAP;
+    }
     inline FrameContext&         get_frame() {
         return ctx.frames[ctx.frameIdx % FRAME_OVERLAP];
     }

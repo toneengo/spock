@@ -174,6 +174,7 @@ namespace spock {
     inline void begin_dynamic_rendering(VkCommandBuffer cmd, VkExtent2D extent, std::initializer_list<RenderingAttachmentInfo> color, RenderingAttachmentInfo depth = {}, RenderingAttachmentInfo stencil = {}, uint32_t layerCount = 1, VkRenderingFlags flags = 0)
     {
         //max 16 color attachments
+        assert(color.size() < 16);
         VkRenderingAttachmentInfo colorAttachments[16];
         VkRenderingAttachmentInfo depthAttachment = {};
         VkRenderingAttachmentInfo stencilAttachment = {};
