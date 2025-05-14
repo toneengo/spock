@@ -288,9 +288,10 @@ Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemor
     return buffer;
 }
 
-Buffer spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, size_t size) {
+Buffer spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size) {
 
-    Buffer uploadbuffer = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    Buffer uploadbuffer = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+    void* data = uploadbuffer.info.pMappedData;
     memcpy(uploadbuffer.info.pMappedData, src, size);
     begin_immediate_command();
 
