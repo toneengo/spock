@@ -288,6 +288,23 @@ Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemor
     return buffer;
 }
 
+Buffer spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, size_t size) {
+
+    Buffer uploadbuffer = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
+    memcpy(uploadbuffer.info.pMappedData, src, size);
+    begin_immediate_command();
+
+    VkBufferCopy bufferCopy;
+    bufferCopy.srcOffset = srcOffset;
+    bufferCopy.dstOffset = dstOffset;
+    bufferCopy.size = size;
+
+    vkCmdCopyBuffer(ctx.immCommandBuffer, uploadbuffer.buffer, buffer, 1, &bufferCopy);
+    end_immediate_command();
+
+    vmaDestroyBuffer(ctx.allocator, uploadbuffer.buffer, uploadbuffer.allocation);
+}
+
 Image spock::create_image(void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped) {
     size_t data_size    = size.depth * size.width * size.height * 4;
     Buffer uploadbuffer = create_buffer(data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);

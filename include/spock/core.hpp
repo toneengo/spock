@@ -51,6 +51,9 @@ namespace spock {
     void                  destroy_image(Image image);
 
     Buffer                create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+
+    // ONLY use for gpu-only buffers at initialisation
+    Buffer copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, size_t size);
     void                  destroy_buffer(Buffer buffer);
 
     void                  create_swapchain(uint32_t width, uint32_t height);
