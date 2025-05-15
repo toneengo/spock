@@ -34,26 +34,19 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_push_constant_ranges(std::
     return *this;
 }
 
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_color_attachments(int attachmentCount, void* images)
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_color_attachment_formats(std::initializer_list<VkFormat> formats)
 {
-    colorAttachments.resize(attachmentCount);
-    memcpy(colorAttachments.data(), images, sizeof(spock::Image) * attachmentCount);
+    colorAttachmentFormats = formats;
     return *this;
 }
 
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_color_attachments(std::initializer_list<spock::Image> images)
-{
-    colorAttachments = images;
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_depth_attachment_format(VkFormat format) {
+    depthAttachmentFormat = format;
     return *this;
 }
 
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_depth_attachment(spock::Image image) {
-    depthAttachment = image;
-    return *this;
-}
-
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_stencil_attachment(spock::Image image) {
-    stencilAttachment = image;
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_stencil_attachment_format(VkFormat format) {
+    stencilAttachmentFormat = format;
     return *this;
 }
 
@@ -93,7 +86,7 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_color_blend_states(std::in
 }
 
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_all_color_blend_states(VkPipelineColorBlendAttachmentState state) {
-    colorBlendAttachmentStates.resize(colorAttachments.size());
+    colorBlendAttachmentStates.resize(colorAttachmentFormats.size());
     for (auto& s : colorBlendAttachmentStates)
     {
         s = state;
@@ -196,19 +189,14 @@ VkPipeline GraphicsPipelineBuilder::build() {
 
     VkGraphicsPipelineCreateInfo info = {};
     info.sType                        = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    std::vector<VkFormat> colorAttachmentFormats;
-    for (auto& c : colorAttachments) {
-        //colorAttachmentFormats.push_back(c.imageFormat);
-        colorAttachmentFormats.push_back(c.imageFormat);
-    }
     VkPipelineRenderingCreateInfo _r = {
         .sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO,
         .pNext                   = VK_NULL_HANDLE,
         .viewMask                = viewMask,
         .colorAttachmentCount    = uint32_t(colorAttachmentFormats.size()),
-        .pColorAttachmentFormats = colorAttachments.size() > 0 ? colorAttachmentFormats.data() : nullptr,
-        .depthAttachmentFormat   = depthAttachment.imageFormat,
-        .stencilAttachmentFormat = stencilAttachment.imageFormat,
+        .pColorAttachmentFormats = colorAttachmentFormats.size() > 0 ? colorAttachmentFormats.data() : nullptr,
+        .depthAttachmentFormat   = depthAttachmentFormat,
+        .stencilAttachmentFormat = stencilAttachmentFormat,
     };
     info.pNext                             = &_r;
     info.flags                             = flags;
