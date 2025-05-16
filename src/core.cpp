@@ -197,6 +197,19 @@ VkDescriptorSetLayout spock::create_descriptor_set_layout(std::initializer_list<
     return set;
 }
 
+VkPipelineLayout      spock::create_pipeline_layout(std::initializer_list<VkDescriptorSetLayout> dsLayouts, std::initializer_list<VkPushConstantRange> psRanges)
+{
+    VkPipelineLayout layout;
+    VkPipelineLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    layoutInfo.pNext                  = nullptr;
+    layoutInfo.pSetLayouts            = std::data(dsLayouts);
+    layoutInfo.setLayoutCount         = dsLayouts.size();
+    layoutInfo.pPushConstantRanges    = std::data(psRanges);
+    layoutInfo.pushConstantRangeCount = psRanges.size();
+    VK_CHECK(vkCreatePipelineLayout(spock::ctx.device, &layoutInfo, nullptr, &layout));
+    return layout;
+}
 union DescriptorWriteInfo {
     VkDescriptorBufferInfo bufInfo;
     VkDescriptorImageInfo  imgInfo;

@@ -29,6 +29,12 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_descriptor_set_layouts(std
     return *this;
 }
 
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_pipeline_layout(VkPipelineLayout pipelineLayout)
+{
+    layout = pipelineLayout;
+    return *this;
+}
+
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_push_constant_ranges(std::initializer_list<VkPushConstantRange> ranges) {
     pushConstantRanges = ranges;
     return *this;
@@ -178,14 +184,17 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_dynamic_states(std::initia
 }
 
 VkPipeline GraphicsPipelineBuilder::build() {
-    VkPipelineLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    layoutInfo.pNext                  = nullptr;
-    layoutInfo.pSetLayouts            = descriptorSetLayouts.data();
-    layoutInfo.setLayoutCount         = descriptorSetLayouts.size();
-    layoutInfo.pPushConstantRanges    = pushConstantRanges.data();
-    layoutInfo.pushConstantRangeCount = pushConstantRanges.size();
-    VK_CHECK(vkCreatePipelineLayout(spock::ctx.device, &layoutInfo, nullptr, &layout));
+    if (layout == VK_NULL_HANDLE)
+    {
+        VkPipelineLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        layoutInfo.pNext                  = nullptr;
+        layoutInfo.pSetLayouts            = descriptorSetLayouts.data();
+        layoutInfo.setLayoutCount         = descriptorSetLayouts.size();
+        layoutInfo.pPushConstantRanges    = pushConstantRanges.data();
+        layoutInfo.pushConstantRangeCount = pushConstantRanges.size();
+        VK_CHECK(vkCreatePipelineLayout(spock::ctx.device, &layoutInfo, nullptr, &layout));
+    }
 
     VkGraphicsPipelineCreateInfo info = {};
     info.sType                        = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -249,20 +258,29 @@ ComputePipelineBuilder& ComputePipelineBuilder::set_descriptor_set_layouts(std::
     return *this;
 }
 
+ComputePipelineBuilder& ComputePipelineBuilder::set_pipeline_layout(VkPipelineLayout pipelineLayout)
+{
+    layout = pipelineLayout;
+    return *this;
+}
+
 ComputePipelineBuilder& ComputePipelineBuilder::set_push_constant_ranges(std::initializer_list<VkPushConstantRange> ranges) {
     pushConstantRanges = ranges;
     return *this;
 }
 
 VkPipeline ComputePipelineBuilder::build() {
-    VkPipelineLayoutCreateInfo layoutInfo{};
-    layoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    layoutInfo.pNext                  = nullptr;
-    layoutInfo.pSetLayouts            = descriptorSetLayouts.data();
-    layoutInfo.setLayoutCount         = descriptorSetLayouts.size();
-    layoutInfo.pPushConstantRanges    = pushConstantRanges.data();
-    layoutInfo.pushConstantRangeCount = pushConstantRanges.size();
-    VK_CHECK(vkCreatePipelineLayout(spock::ctx.device, &layoutInfo, nullptr, &layout));
+    if (layout == VK_NULL_HANDLE)
+    {
+        VkPipelineLayoutCreateInfo layoutInfo{};
+        layoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        layoutInfo.pNext                  = nullptr;
+        layoutInfo.pSetLayouts            = descriptorSetLayouts.data();
+        layoutInfo.setLayoutCount         = descriptorSetLayouts.size();
+        layoutInfo.pPushConstantRanges    = pushConstantRanges.data();
+        layoutInfo.pushConstantRangeCount = pushConstantRanges.size();
+        VK_CHECK(vkCreatePipelineLayout(spock::ctx.device, &layoutInfo, nullptr, &layout));
+    }
 
     VkPipelineShaderStageCreateInfo stageInfo{};
     stageInfo.sType  = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

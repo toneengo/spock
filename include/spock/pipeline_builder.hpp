@@ -24,9 +24,10 @@ struct ComputePipelineBuilder {
     std::vector<VkPushConstantRange>   pushConstantRanges;
     VkShaderModule                     shaderModule;
     VkPipeline                         pipeline;
-    VkPipelineLayout                   layout;
+    VkPipelineLayout                   layout = VK_NULL_HANDLE;
     ComputePipelineBuilder&            set_shader_module(VkShaderModule module);
     ComputePipelineBuilder&            set_descriptor_set_layouts(std::initializer_list<VkDescriptorSetLayout> dsLayouts);
+    ComputePipelineBuilder& set_pipeline_layout(VkPipelineLayout pipelineLayout);
     ComputePipelineBuilder&            set_push_constant_ranges(std::initializer_list<VkPushConstantRange> ranges);
     VkPipeline                         build();
 };
@@ -57,7 +58,7 @@ struct GraphicsPipelineBuilder {
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates;
     std::vector<VkDynamicState>                      dynamicStates;
 
-    VkPipelineLayout                                 layout = {};
+    VkPipelineLayout                                 layout = VK_NULL_HANDLE;
     //unused
     /*
     VkRenderPass                                     renderPass;
@@ -67,6 +68,7 @@ struct GraphicsPipelineBuilder {
     */
 
     GraphicsPipelineBuilder& set_descriptor_set_layouts(std::initializer_list<VkDescriptorSetLayout> dsLayouts);
+    GraphicsPipelineBuilder& set_pipeline_layout(VkPipelineLayout pipelineLayout);
     GraphicsPipelineBuilder& set_push_constant_ranges(std::initializer_list<VkPushConstantRange> ranges);
     GraphicsPipelineBuilder& set_color_attachment_formats(std::initializer_list<VkFormat> formats);
     GraphicsPipelineBuilder& set_depth_attachment_format(VkFormat format);
