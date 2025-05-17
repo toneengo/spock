@@ -45,13 +45,8 @@ struct GraphicsPipelineBuilder {
     VkPipelineVertexInputStateCreateInfo             vertexInputState   = {.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO};
     VkPipelineInputAssemblyStateCreateInfo           inputAssemblyState = {.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO};
     VkPipelineTessellationStateCreateInfo            tessellationState  = {.sType = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO};
-    VkPipelineViewportStateCreateInfo                viewportState      = {.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-                                                                           .pNext = nullptr,
-                                                                           .flags = 0,
-                                                                           .viewportCount = 1,
-                                                                           .pViewports = nullptr,
-                                                                           .scissorCount = 1,
-                                                                           .pScissors = nullptr};
+    std::vector<VkViewport> viewports;
+    std::vector<VkRect2D> scissors;
     VkPipelineRasterizationStateCreateInfo           rasterizationState = {.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
     VkPipelineMultisampleStateCreateInfo             multisampleState   = {.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
     VkPipelineDepthStencilStateCreateInfo            depthStencilState  = {.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
@@ -59,6 +54,9 @@ struct GraphicsPipelineBuilder {
     std::vector<VkDynamicState>                      dynamicStates;
 
     VkPipelineLayout                                 layout = VK_NULL_HANDLE;
+
+    uint32_t viewportCount = 1;
+    uint32_t scissorCount = 1;
     //unused
     /*
     VkRenderPass                                     renderPass;
@@ -75,7 +73,8 @@ struct GraphicsPipelineBuilder {
     GraphicsPipelineBuilder& set_stencil_attachment_format(VkFormat format);
     GraphicsPipelineBuilder& set_view_mask(uint32_t _viewMask);
     GraphicsPipelineBuilder& set_shader_stages(std::initializer_list<ShaderStage> shaderStages);
-    GraphicsPipelineBuilder& set_viewport_state(uint32_t viewportCount = 1, uint32_t scissorCount = 1, VkViewport* viewports = VK_NULL_HANDLE, VkRect2D* scissors = VK_NULL_HANDLE);
+    GraphicsPipelineBuilder& set_viewport_state(std::initializer_list<VkViewport> _viewports, std::initializer_list<VkRect2D> _scissors);
+    GraphicsPipelineBuilder& set_viewport_count(uint32_t viewportCount, uint32_t scissorCount);
     GraphicsPipelineBuilder& set_color_blend_states(std::initializer_list<VkPipelineColorBlendAttachmentState> attachments);
     GraphicsPipelineBuilder& set_all_color_blend_states(VkPipelineColorBlendAttachmentState state);
     GraphicsPipelineBuilder& set_input_assembly_state(VkPrimitiveTopology topology, bool primitiveRestartEnable = false);

@@ -76,16 +76,21 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_shader_stages(std::initial
     return *this;
 }
 
-GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_viewport_state(uint32_t viewportCount, uint32_t scissorCount, VkViewport* viewports, VkRect2D* scissors) {
-    viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewportState.pNext         = nullptr;
-    viewportState.viewportCount = viewportCount;
-    viewportState.scissorCount  = scissorCount;
-    viewportState.pViewports    = viewports;
-    viewportState.pScissors     = scissors;
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_viewport_state(std::initializer_list<VkViewport> _viewports, std::initializer_list<VkRect2D> _scissors)
+{
+    viewports = _viewports;
+    scissors = _scissors;
+    viewportCount = _viewports.size();
+    scissorCount = _scissors.size();
     return *this;
 }
 
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_viewport_count(uint32_t _viewportCount, uint32_t _scissorCount)
+{
+    viewportCount = _viewportCount;
+    scissorCount =  _scissorCount;
+    return *this;
+}
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_color_blend_states(std::initializer_list<VkPipelineColorBlendAttachmentState> attachments) {
     colorBlendAttachmentStates = attachments;
     return *this;
@@ -214,6 +219,23 @@ VkPipeline GraphicsPipelineBuilder::build() {
     info.pVertexInputState                 = &vertexInputState;
     info.pInputAssemblyState               = &inputAssemblyState;
     info.pTessellationState                = &tessellationState;
+
+    VkPipelineViewportStateCreateInfo viewportState = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+        .viewportCount = viewportCount, 
+        .pViewports = viewports.size() > 0 ? viewports.data() : nullptr,
+        .scissorCount = scissorCount,
+        .pScissors = scissors.size() > 0 ? scissors.data() : nullptr,
+    };
+
+    for (auto& state : dynamicStates)
+    {
+        if (state == VK_DYNAMIC_STATE_VIEWPORT)
+            assert(viewportState.pViewports == nullptr);
+        if (state == VK_DYNAMIC_STATE_SCISSOR)
+            assert(viewportState.pScissors == nullptr);
+    }
+
     info.pViewportState                    = &viewportState;
     info.pRasterizationState               = &rasterizationState;
     info.pMultisampleState                 = &multisampleState;
