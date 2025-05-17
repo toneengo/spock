@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <fstream>
 #include <set>
 #include <algorithm>
@@ -102,7 +103,7 @@ class DirStackFileIncluder : public glslang::TShader::Includer {
 };
 
 
-static std::vector<uint32_t> compileShaderToSPIRV_Vulkan(const char* const* shaderSource, EShLanguage stage, const char* filePath) {
+std::vector<uint32_t> spock::glsl_to_spirv(const char* const* shaderSource, EShLanguage stage, const char* filePath) {
     glslang::InitializeProcess();
     DirStackFileIncluder includer;
     includer.pushExternalLocalDirectory(getDirectory(filePath));
@@ -137,19 +138,8 @@ static std::vector<uint32_t> compileShaderToSPIRV_Vulkan(const char* const* shad
 }
 
 std::vector<VkShaderModule> shaderModulesToClean;
-
-VkShaderModule              spock::create_shader_module(const char* filePath) {
-    printf("compiling shader %s\n", filePath);
-    // open the file. With cursor at the end
-    const char* extension = filePath + strlen(filePath) - 4;
-    EShLanguage stage;
-    if (strcmp(extension, "vert") == 0)
-        stage = EShLangVertex;
-    if (strcmp(extension, "frag") == 0)
-        stage = EShLangFragment;
-    if (strcmp(extension, "comp") == 0)
-        stage = EShLangCompute;
-
+VkShaderModule              spock::create_shader_module(const char* filePath)
+{
     std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open()) {
         printf("Couldn't open file %s\n", filePath);
@@ -157,30 +147,38 @@ VkShaderModule              spock::create_shader_module(const char* filePath) {
         //return false;
     }
 
-    int   i   = 0;
-    char* buf = new char[2000000];
-    while (file.get() > 0) {
-        file.seekg(i);
-        buf[i++] = file.get();
-    }
-    buf[i] = 0;
+    file.seekg(0, std::ios::end);
+    size_t size = file.tellg();
+    std::string buffer(size, ' ');
+    file.seekg(0);
+    file.read(&buffer[0], size);
     file.close();
-
-    auto spirv = compileShaderToSPIRV_Vulkan(&buf, stage, filePath);
-    if (spirv.size() == 0) {
-        printf("Error compiling %s\n", filePath);
-        error_exit();
-    }
-    delete[] buf;
 
     // create a new shader module, using the buffer we loaded
     VkShaderModuleCreateInfo createInfo = {};
     createInfo.sType                    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     createInfo.pNext                    = nullptr;
-    createInfo.codeSize                 = spirv.size() * sizeof(uint32_t);
-    createInfo.pCode                    = spirv.data();
+    createInfo.codeSize                 = buffer.size();
+    createInfo.pCode                    = (uint32_t*)buffer.data();
 
     // check that the creation goes well.
+    VkShaderModule shaderModule;
+    if (vkCreateShaderModule(ctx.device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+        error_exit();
+    }
+    shaderModulesToClean.push_back(shaderModule);
+
+    return shaderModule;
+}
+
+VkShaderModule spock::create_shader_module(size_t bufsize, uint32_t* spirv)
+{
+    VkShaderModuleCreateInfo createInfo = {};
+    createInfo.sType                    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.pNext                    = nullptr;
+    createInfo.codeSize                 = bufsize;
+    createInfo.pCode                    = spirv;
+
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(ctx.device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
         error_exit();
