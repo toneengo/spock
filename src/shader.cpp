@@ -139,6 +139,7 @@ static std::vector<uint32_t> compileShaderToSPIRV_Vulkan(const char* const* shad
 std::vector<VkShaderModule> shaderModulesToClean;
 
 VkShaderModule              spock::create_shader_module(const char* filePath) {
+    printf("compiling shader %s\n", filePath);
     // open the file. With cursor at the end
     const char* extension = filePath + strlen(filePath) - 4;
     EShLanguage stage;

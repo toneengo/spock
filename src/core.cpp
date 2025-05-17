@@ -87,18 +87,21 @@ static void init_device() {
     VK_CHECK(glfwCreateWindowSurface(ctx.instance, ctx.window, nullptr, &ctx.surface));
 
     //vulkan 1.3 features
-    VkPhysicalDeviceVulkan13Features features{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
-    features.dynamicRendering = true;
-    features.synchronization2 = true;
+    VkPhysicalDeviceVulkan13Features features13{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
+    features13.dynamicRendering = true;
+    features13.synchronization2 = true;
     //vulkan 1.2 features
     VkPhysicalDeviceVulkan12Features features12{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
     features12.bufferDeviceAddress                           = true;
     features12.shaderOutputViewportIndex                     = true;
+    features12.shaderOutputLayer                     = true;
     features12.descriptorIndexing                            = true;
     features12.runtimeDescriptorArray                        = true;
     features12.shaderUniformBufferArrayNonUniformIndexing    = true;
     features12.shaderStorageImageArrayNonUniformIndexing     = true;
+    features12.shaderSampledImageArrayNonUniformIndexing     = true;
     features12.shaderStorageImageArrayNonUniformIndexing     = true;
+    features12.descriptorBindingUniformBufferUpdateAfterBind = true;
     features12.descriptorBindingSampledImageUpdateAfterBind  = true;
     features12.descriptorBindingStorageBufferUpdateAfterBind = true;
     features12.descriptorBindingStorageImageUpdateAfterBind  = true;
@@ -106,10 +109,14 @@ static void init_device() {
     VkPhysicalDeviceVulkan11Features features11{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
     features11.multiview = true;
 
+    VkPhysicalDeviceFeatures features10{};
+    features10.fillModeNonSolid = true;
+
     vkb::PhysicalDeviceSelector selector{vkb_inst};
     vkb::PhysicalDevice         physical_device = selector
         .set_minimum_version(1, 3)
-        .set_required_features_13(features)
+        .set_required_features(features10)
+        .set_required_features_13(features13)
         .set_required_features_12(features12)
         .set_required_features_11(features11)
         .set_surface(ctx.surface).select().value();
@@ -180,12 +187,18 @@ void spock::clean_init() {
 
 VkDescriptorSetLayout spock::create_descriptor_set_layout(std::initializer_list<Binding> _bindings, VkShaderStageFlags shaderStages, VkDescriptorSetLayoutCreateFlags flags) {
     std::vector<VkDescriptorSetLayoutBinding> bindings;
+    std::vector<VkDescriptorBindingFlags> bindingFlags;
     for (auto& b : _bindings) {
         bindings.push_back({.binding = b.binding, .descriptorType = b.type, .descriptorCount = b.count, .stageFlags = shaderStages});
+        bindingFlags.push_back(b.flags);
     }
 
+    VkDescriptorSetLayoutBindingFlagsCreateInfo binding_info = {.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
+    binding_info.bindingCount = bindingFlags.size();
+    binding_info.pBindingFlags = bindingFlags.data();
+
     VkDescriptorSetLayoutCreateInfo info = {.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
-    info.pNext                           = VK_NULL_HANDLE;
+    info.pNext                           = &binding_info;
     info.pBindings                       = bindings.data();
     info.bindingCount                    = bindings.size();
     info.flags                           = flags;
@@ -301,7 +314,7 @@ Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemor
     return buffer;
 }
 
-Buffer spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size) {
+void spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size) {
 
     Buffer uploadbuffer = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
     void* data = uploadbuffer.info.pMappedData;
@@ -477,6 +490,7 @@ Image spock::create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags us
 
 
         default:
+            break;
     }
 
     // if the format is a depth format, we will need to have it use the correct
