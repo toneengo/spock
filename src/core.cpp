@@ -560,7 +560,6 @@ void spock::cleanup() {
 
     destroyQueue.flush();
 
-    ctx.descriptorAllocator.destroy_pools();
     destroy_swapchain();
 
     vkDestroySurfaceKHR(ctx.instance, ctx.surface, nullptr);

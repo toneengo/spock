@@ -4,19 +4,16 @@
 
 namespace spock {
     struct DescriptorAllocator {
-        struct PoolSizeRatio {
-            VkDescriptorType type;
-            float            ratio;
-        };
+        VkDescriptorType type;
+        uint32_t         startSize;
 
         bool                          initialised = false;
-        std::vector<PoolSizeRatio>    ratios;
         std::vector<VkDescriptorPool> pools;
         uint32_t                      currentPool = 0;
         uint32_t                      setsPerPool = 0;
         VkDescriptorPoolCreateFlags   flags       = 0;
 
-        void                          init(std::initializer_list<PoolSizeRatio> _ratios, uint32_t maxSets);
+        void                          init(VkDescriptorType type, uint32_t startSize);
         VkDescriptorPool              create_pool();
         void                          set_flags(VkDescriptorPoolCreateFlags flags);
         void                          clear_pools();

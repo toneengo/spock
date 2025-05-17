@@ -36,8 +36,6 @@ namespace spock {
 
         uint32_t                    frameIdx = 0;
 
-        spock::DescriptorAllocator descriptorAllocator;
-
         //command buffer for immediate commands
         VkCommandPool   immCommandPool;
         VkCommandBuffer immCommandBuffer;

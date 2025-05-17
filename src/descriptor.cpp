@@ -4,28 +4,27 @@
 
 using namespace spock;
 
-void DescriptorAllocator::init(std::initializer_list<DescriptorAllocator::PoolSizeRatio> _ratios, uint32_t maxSets) {
-    ratios      = _ratios;
-    setsPerPool = maxSets; //grow it next allocation
+void DescriptorAllocator::init(VkDescriptorType t, uint32_t sz) {
+    type = t;
+    startSize = sz;
+    setsPerPool = 1; //grow it next allocation
     pools.push_back(create_pool());
     initialised = true;
 }
 
 VkDescriptorPool DescriptorAllocator::create_pool() {
-    std::vector<VkDescriptorPoolSize> poolSizes;
-    for (PoolSizeRatio ratio : ratios) {
-        poolSizes.push_back(VkDescriptorPoolSize{.type = ratio.type, .descriptorCount = uint32_t(ratio.ratio * setsPerPool)});
-    }
+    VkDescriptorPoolSize sz = {.type = type, .descriptorCount = uint32_t(startSize * setsPerPool)};
 
     VkDescriptorPoolCreateInfo pool_info = {};
     pool_info.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pool_info.flags                      = flags;
-    pool_info.maxSets                    = setsPerPool;
-    pool_info.poolSizeCount              = (uint32_t)poolSizes.size();
-    pool_info.pPoolSizes                 = poolSizes.data();
+    pool_info.maxSets                    = 64;
+    pool_info.poolSizeCount              = 1;
+    pool_info.pPoolSizes                 = &sz;
 
     VkDescriptorPool pool;
-    vkCreateDescriptorPool(ctx.device, &pool_info, nullptr, &pool);
+    VkResult r = vkCreateDescriptorPool(ctx.device, &pool_info, nullptr, &pool);
+    assert(r == VK_SUCCESS);
     return pool;
 }
 
