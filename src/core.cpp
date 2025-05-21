@@ -425,9 +425,7 @@ Image spock::create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags us
     newImage.imageExtent = size;
 
     VkImageCreateInfo img_info = info::create::image(format, usage, size);
-    if (mipmapped) {
-        img_info.mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(size.width, size.height)))) + 1;
-    }
+    img_info.mipLevels = mipmapped ? static_cast<uint32_t>(std::floor(std::log2(std::max(size.width, size.height)))) + 1 : 1;
 
     VkImageSubresourceRange subresourceRange {
         .baseMipLevel = 0,
