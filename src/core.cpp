@@ -30,9 +30,11 @@ using namespace spock;
 
 static void destroy_swapchain() {
     vkDestroySwapchainKHR(ctx.device, ctx.swapchain.swapchain, nullptr);
-    for (const auto& iv : ctx.swapchain.imageViews) {
-        vkDestroyImageView(ctx.device, iv, nullptr);
+    for (const auto& im : ctx.swapchain.images) {
+        vkDestroyImageView(ctx.device, im.imageView, nullptr);
     }
+
+    ctx.swapchain.images.clear();
 }
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -341,7 +343,7 @@ Image spock::create_image(void* data, VkExtent3D size, VkFormat format, VkImageU
     Image new_image = create_image(size, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, viewType, mipmapped);
 
     begin_immediate_command();
-    image_barrier(ctx.immCommandBuffer, new_image.image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    image_barrier(ctx.immCommandBuffer, new_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, true);
 
     VkBufferImageCopy copyRegion = {};
     copyRegion.bufferOffset      = 0;
@@ -357,7 +359,7 @@ Image spock::create_image(void* data, VkExtent3D size, VkFormat format, VkImageU
     // copy the buffer into the image
     vkCmdCopyBufferToImage(ctx.immCommandBuffer, uploadbuffer.buffer, new_image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-    image_barrier(ctx.immCommandBuffer, new_image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    image_barrier(ctx.immCommandBuffer, new_image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     end_immediate_command();
 
     vmaDestroyBuffer(ctx.allocator, uploadbuffer.buffer, uploadbuffer.allocation);
@@ -537,8 +539,17 @@ void spock::create_swapchain(uint32_t width, uint32_t height) {
     ctx.swapchain.extent = vkbSwapchain.extent;
     //store swapchain and its related images
     ctx.swapchain.swapchain  = vkbSwapchain.swapchain;
-    ctx.swapchain.images     = vkbSwapchain.get_images().value();
-    ctx.swapchain.imageViews = vkbSwapchain.get_image_views().value();
+
+    auto imageViews = vkbSwapchain.get_image_views().value();
+    auto images = vkbSwapchain.get_images().value();
+
+    ctx.swapchain.images.resize(images.size());
+    for (int i = 0; i < ctx.swapchain.images.size(); i++)
+    {
+        ctx.swapchain.images[i].image = images[i];
+        ctx.swapchain.images[i].imageView = imageViews[i];
+        ctx.swapchain.images[i].imageFormat = ctx.swapchain.imageFormat;
+    }
 }
 
 void spock::cleanup() {

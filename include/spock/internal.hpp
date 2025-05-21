@@ -51,10 +51,9 @@ namespace spock {
 
         struct Swapchain {
             VkSwapchainKHR           swapchain;
-            std::vector<VkImage>     images;
-            std::vector<VkImageView> imageViews;
-            VkFormat                 imageFormat;
+            std::vector<spock::Image>images;
             VkExtent2D               extent;
+            VkFormat imageFormat;
         };
 
         //settable by the "user"

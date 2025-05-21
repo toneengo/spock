@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstdio>
 #include <initializer_list>
+#include "types.hpp"
 
 namespace spock {
     inline VkImageSubresourceRange image_subresource_range(VkImageAspectFlags aspectMask) {
@@ -22,7 +23,7 @@ namespace spock {
         VkAccessFlags2        dstAccessMask;
     };
 
-    inline void image_barrier(VkCommandBuffer cmd, VkImage image, VkImageLayout currentLayout, VkImageLayout newLayout,
+    inline void image_barrier(VkCommandBuffer cmd, spock::Image& image, VkImageLayout newLayout, bool first = false,
                               VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VkAccessFlags2 srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
                               VkPipelineStageFlags2 dstStageMask  = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
                               VkAccessFlags2        dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT) {
@@ -34,17 +35,17 @@ namespace spock {
         imageBarrier.dstStageMask  = dstStageMask;
         imageBarrier.dstAccessMask = dstAccessMask;
 
-        imageBarrier.oldLayout = currentLayout;
+        imageBarrier.oldLayout = first ? VK_IMAGE_LAYOUT_UNDEFINED : image.currentLayout;
         imageBarrier.newLayout = newLayout;
 
         bool isDepthImage = false;
-        if (currentLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
-                currentLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL)
+        if (image.currentLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+                image.currentLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL)
             isDepthImage = true;
 
         VkImageAspectFlags aspectMask = (isDepthImage) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
         imageBarrier.subresourceRange = image_subresource_range(aspectMask);
-        imageBarrier.image            = image;
+        imageBarrier.image            = image.image;
 
         VkDependencyInfo depInfo{};
         depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
@@ -54,6 +55,8 @@ namespace spock {
         depInfo.pImageMemoryBarriers    = &imageBarrier;
 
         vkCmdPipelineBarrier2(cmd, &depInfo);
+
+        image.currentLayout = newLayout;
     }
     inline void buffer_barrier(VkCommandBuffer cmd, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
                               VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VkAccessFlags2 srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,

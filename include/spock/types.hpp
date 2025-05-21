@@ -18,6 +18,7 @@ namespace spock {
         VkExtent3D    imageExtent = {};
         VkFormat      imageFormat = VK_FORMAT_UNDEFINED;
         uint32_t      index       = 0;
+        VkImageLayout currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     };
 
     struct Buffer {
