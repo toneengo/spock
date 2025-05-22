@@ -1,7 +1,5 @@
 #include <vulkan/vulkan_core.h>
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 
 #include "spock/info.hpp"
@@ -9,6 +7,7 @@
 #include "vk_mem_alloc.h"
 
 #include "VkBootstrap.h"
+#include <SDL3/SDL_vulkan.h>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
@@ -28,7 +27,7 @@ const bool gEnableValidationLayers = false;
 
 using namespace spock;
 
-static void destroy_swapchain() {
+void spock::destroy_swapchain() {
     vkDestroySwapchainKHR(ctx.device, ctx.swapchain.swapchain, nullptr);
     for (const auto& im : ctx.swapchain.images) {
         vkDestroyImageView(ctx.device, im.imageView, nullptr);
@@ -37,56 +36,37 @@ static void destroy_swapchain() {
     ctx.swapchain.images.clear();
 }
 
-static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    ctx.windowExtent.width  = width;
-    ctx.windowExtent.height = height;
-    destroy_swapchain();
-    create_swapchain(width, height);
+void spock::process_SDL_event(const SDL_Event& event)
+{
+    switch (event.type)
+    {
+        case SDL_EVENT_WINDOW_RESIZED:
+            destroy_swapchain();
+            create_swapchain(event.window.data1, event.window.data2);
+            break;
+        default:
+            break;
+    }
 }
 
-void error_exit() {
-    cleanup();
-    exit(1);
-}
-
-static void init_glfw_window() {
-    glfwInit();
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-
-    ctx.window              = glfwCreateWindow(1920, 1080, "vulkan engine", nullptr, nullptr);
-    ctx.windowExtent.width  = 1920;
-    ctx.windowExtent.height = 1080;
-    ctx.monitor             = glfwGetPrimaryMonitor();
-    auto mode               = glfwGetVideoMode(ctx.monitor);
-    ctx.screenExtent.width  = mode->width;
-    ctx.screenExtent.height = mode->height;
-    ctx.screenExtent.depth  = 1;
-
-    glfwSetFramebufferSizeCallback(ctx.window, framebuffer_size_callback);
-}
-
-static void init_device() {
-    uint32_t             count;
-    const char**         extensions = glfwGetRequiredInstanceExtensions(&count);
+static void init_device(SDL_Window* window) {
+    ctx.window = window;
 
     vkb::InstanceBuilder builder;
     auto                 inst_ret = builder.set_app_name("vulkan app")
                         .request_validation_layers(gEnableValidationLayers)
                         .use_default_debug_messenger()
                         .require_api_version(1, 3, 0)
-                        .enable_extensions(count, extensions)
                         .build();
 
     vkb::Instance vkb_inst = inst_ret.value();
     ctx.instance           = vkb_inst.instance;
     ctx.debugMessenger     = vkb_inst.debug_messenger;
 
-    //glfw function pointers
-    PFN_vkCreateInstance    pfnCreateInstance    = (PFN_vkCreateInstance)glfwGetInstanceProcAddress(NULL, "vkCreateInstance");
-    PFN_vkCreateDevice      pfnCreateDevice      = (PFN_vkCreateDevice)glfwGetInstanceProcAddress(ctx.instance, "vkCreateDevice");
-    PFN_vkGetDeviceProcAddr pfnGetDeviceProcAddr = (PFN_vkGetDeviceProcAddr)glfwGetInstanceProcAddress(ctx.instance, "vkGetDeviceProcAddr");
-    VK_CHECK(glfwCreateWindowSurface(ctx.instance, ctx.window, nullptr, &ctx.surface));
+    if (!SDL_Vulkan_CreateSurface(ctx.window, ctx.instance, nullptr, &ctx.surface))
+    {
+        printf("Couldnt create surface: %s\n", SDL_GetError());
+    }
 
     //vulkan 1.3 features
     VkPhysicalDeviceVulkan13Features features13{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
@@ -121,7 +101,9 @@ static void init_device() {
         .set_required_features_13(features13)
         .set_required_features_12(features12)
         .set_required_features_11(features11)
-        .set_surface(ctx.surface).select().value();
+        .set_surface(ctx.surface)
+        .select()
+        .value();
 
     vkb::DeviceBuilder device_builder{physical_device};
     vkb::Device        vkb_device = device_builder.build().value();
@@ -173,13 +155,13 @@ static void init_synchronization() {
     QUEUE_DESTROY_OBJ(ctx.immCommandFence);
 }
 
-void spock::init() {
-    init_glfw_window();
-    init_device();
+void spock::init(SDL_Window* window)
+{
+    init_device(window);
     init_swapchain();
     init_commands();
     init_synchronization();
-    
+
     ctx.initialised = true;
 }
 
@@ -312,6 +294,7 @@ Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemor
     vmaallocInfo.usage                   = memoryUsage;
     vmaallocInfo.flags                   = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     Buffer buffer;
+    buffer.size = allocSize;
     VK_CHECK(vmaCreateBuffer(ctx.allocator, &bufferInfo, &vmaallocInfo, &buffer.buffer, &buffer.allocation, &buffer.info));
     return buffer;
 }
@@ -536,7 +519,7 @@ void spock::create_swapchain(uint32_t width, uint32_t height) {
 
     ctx.swapchain.extent = vkbSwapchain.extent;
     //store swapchain and its related images
-    ctx.swapchain.swapchain  = vkbSwapchain.swapchain;
+    ctx.swapchain.swapchain = vkbSwapchain.swapchain;
 
     auto imageViews = vkbSwapchain.get_image_views().value();
     auto images = vkbSwapchain.get_images().value();
@@ -576,8 +559,7 @@ void spock::cleanup() {
 
     vkb::destroy_debug_utils_messenger(ctx.instance, ctx.debugMessenger);
     vkDestroyInstance(ctx.instance, nullptr);
-    glfwDestroyWindow(ctx.window);
-    glfwTerminate();
+    SDL_DestroyWindow(ctx.window);
 }
 
 void spock::destroy_buffer(Buffer buffer) {

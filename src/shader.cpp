@@ -8,8 +8,6 @@
 #include "spock/internal.hpp"
 
 #include "spock/shader.hpp"
-
-void error_exit();
 //Shaders
 
 //from glslang repo
@@ -143,7 +141,7 @@ VkShaderModule              spock::create_shader_module(const char* filePath)
     std::ifstream file(filePath, std::ios::binary);
     if (!file.is_open()) {
         printf("Couldn't open file %s\n", filePath);
-        error_exit();
+        assert(false);
         //return false;
     }
 
@@ -164,7 +162,7 @@ VkShaderModule              spock::create_shader_module(const char* filePath)
     // check that the creation goes well.
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(ctx.device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-        error_exit();
+        assert(false);
     }
     shaderModulesToClean.push_back(shaderModule);
 
@@ -181,7 +179,7 @@ VkShaderModule spock::create_shader_module(size_t bufsize, uint32_t* spirv)
 
     VkShaderModule shaderModule;
     if (vkCreateShaderModule(ctx.device, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-        error_exit();
+        assert(false);
     }
     shaderModulesToClean.push_back(shaderModule);
 

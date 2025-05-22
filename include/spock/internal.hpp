@@ -6,8 +6,7 @@
 #include "destroy.hpp"
 #include "descriptor.hpp"
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
+#include <SDL3/SDL.h>
 #include <glm/glm.hpp>
 
 namespace spock {
@@ -41,13 +40,10 @@ namespace spock {
         VkCommandBuffer immCommandBuffer;
         VkFence         immCommandFence;
 
-        GLFWwindow*     window;
-        GLFWmonitor*    monitor;
-        VkExtent2D      windowExtent;
+        SDL_Window*     window;
+        VkExtent2D      windowExtent = {800, 600};
         VkExtent3D      screenExtent; //desktop resolution
-        float           renderScale = 1.f;
-
-        VkExtent2D      extent; //swapchain image size
+        glm::vec2       renderScale = {1.f, 1.f};
 
         struct Swapchain {
             VkSwapchainKHR           swapchain;
@@ -66,6 +62,8 @@ namespace spock {
 
         Swapchain            swapchain;
         spock::DestroyQueue destroyQueue;
+
+        bool resizeRequested = true;
     } ctx;
 
     inline uint32_t         get_frame_number() {

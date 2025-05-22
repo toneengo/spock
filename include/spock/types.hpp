@@ -25,5 +25,6 @@ namespace spock {
         VkBuffer          buffer;
         VmaAllocation     allocation;
         VmaAllocationInfo info;
+        VkDeviceSize      size;
     };
 }

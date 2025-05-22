@@ -5,6 +5,9 @@
 #include "types.hpp"
 #include "shader.hpp"
 
+#include <SDL3/SDL.h>
+#include <SDL3/SDL_vulkan.h>
+
 namespace spock {
     void  clean_init();
 
@@ -31,7 +34,8 @@ namespace spock {
 
     void                  update_descriptor_sets(std::initializer_list<ImageWrite> imageWrites, std::initializer_list<BufferWrite> bufferWrites);
 
-    void                  init();
+    void                  init(SDL_Window* window);
+    void                  process_SDL_event(const SDL_Event& event);
     
     void                  cleanup();
     VkDescriptorSetLayout create_descriptor_set_layout(std::initializer_list<Binding> _bindings, VkShaderStageFlags shaderStages, VkDescriptorSetLayoutCreateFlags flags = 0);
@@ -57,6 +61,7 @@ namespace spock {
     void copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size);
     void                  destroy_buffer(Buffer buffer);
 
+    void                  destroy_swapchain();
     void                  create_swapchain(uint32_t width, uint32_t height);
 
     VkCommandBuffer       get_immediate_command_buffer();
