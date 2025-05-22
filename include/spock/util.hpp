@@ -23,10 +23,39 @@ namespace spock {
         VkAccessFlags2        dstAccessMask;
     };
 
-    inline void image_barrier(VkCommandBuffer cmd, spock::Image& image, VkImageLayout newLayout, bool first = false,
-                              VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VkAccessFlags2 srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
-                              VkPipelineStageFlags2 dstStageMask  = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
-                              VkAccessFlags2        dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT) {
+    inline void set_initial_image_layout(VkCommandBuffer cmd, spock::Image& image, VkImageLayout newLayout)
+    {
+        VkImageMemoryBarrier2 imageBarrier{.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
+        imageBarrier.pNext = nullptr;
+
+        imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageBarrier.newLayout = newLayout;
+
+        bool isDepthImage = false;
+        if (image.currentLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL ||
+                image.currentLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL || newLayout == VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL)
+            isDepthImage = true;
+
+        VkImageAspectFlags aspectMask = (isDepthImage) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+        imageBarrier.subresourceRange = image_subresource_range(aspectMask);
+        imageBarrier.image            = image.image;
+
+        VkDependencyInfo depInfo{};
+        depInfo.sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
+        depInfo.pNext = nullptr;
+
+        depInfo.imageMemoryBarrierCount = 1;
+        depInfo.pImageMemoryBarriers    = &imageBarrier;
+
+        vkCmdPipelineBarrier2(cmd, &depInfo);
+        image.currentLayout = newLayout;
+
+    }
+    inline void image_barrier(VkCommandBuffer cmd, spock::Image& image, VkImageLayout newLayout,
+                              VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_NONE,
+                              VkAccessFlags2        srcAccessMask = VK_ACCESS_2_NONE,
+                              VkPipelineStageFlags2 dstStageMask  = VK_PIPELINE_STAGE_2_NONE,
+                              VkAccessFlags2        dstAccessMask = VK_ACCESS_2_NONE) {
         VkImageMemoryBarrier2 imageBarrier{.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
         imageBarrier.pNext = nullptr;
 
@@ -35,7 +64,7 @@ namespace spock {
         imageBarrier.dstStageMask  = dstStageMask;
         imageBarrier.dstAccessMask = dstAccessMask;
 
-        imageBarrier.oldLayout = first ? VK_IMAGE_LAYOUT_UNDEFINED : image.currentLayout;
+        imageBarrier.oldLayout = image.currentLayout;
         imageBarrier.newLayout = newLayout;
 
         bool isDepthImage = false;
@@ -57,6 +86,29 @@ namespace spock {
         vkCmdPipelineBarrier2(cmd, &depInfo);
 
         image.currentLayout = newLayout;
+    }
+    inline void memory_barrier(VkCommandBuffer cmd,
+                               VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VkAccessFlags2 srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
+                               VkPipelineStageFlags2 dstStageMask  = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,
+                               VkAccessFlags2        dstAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT | VK_ACCESS_2_MEMORY_READ_BIT)
+    {
+        VkMemoryBarrier2 memoryBarrier{
+            .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER_2,
+            .pNext = nullptr,
+            .srcStageMask = srcStageMask,
+            .srcAccessMask = srcAccessMask,
+            .dstStageMask = dstStageMask,
+            .dstAccessMask = dstAccessMask,
+        };
+
+        VkDependencyInfo depInfo{
+            .sType = VK_STRUCTURE_TYPE_DEPENDENCY_INFO,
+            .pNext = nullptr,
+            .memoryBarrierCount = 1,
+            .pMemoryBarriers = &memoryBarrier,
+        };
+
+        vkCmdPipelineBarrier2(cmd, &depInfo);
     }
     inline void buffer_barrier(VkCommandBuffer cmd, VkBuffer buffer, VkDeviceSize offset, VkDeviceSize size,
                               VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, VkAccessFlags2 srcAccessMask = VK_ACCESS_2_MEMORY_WRITE_BIT,
