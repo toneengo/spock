@@ -91,13 +91,9 @@ static void init_device(SDL_Window* window) {
     VkPhysicalDeviceVulkan11Features features11{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES};
     features11.multiview = true;
 
-    VkPhysicalDeviceFeatures features10{};
-    features10.fillModeNonSolid = true;
-
     vkb::PhysicalDeviceSelector selector{vkb_inst};
     vkb::PhysicalDevice         physical_device = selector
         .set_minimum_version(1, 3)
-        .set_required_features(features10)
         .set_required_features_13(features13)
         .set_required_features_12(features12)
         .set_required_features_11(features11)
