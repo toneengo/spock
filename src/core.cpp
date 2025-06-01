@@ -239,6 +239,8 @@ void spock::update_descriptor_sets(std::initializer_list<ImageWrite> imageWrites
 #ifdef DBG
         assert(i < 32);
 #endif
+        if (w.range == 0) continue;
+
         writeInfos[i].bufInfo.buffer = w.buffer;
         writeInfos[i].bufInfo.range  = w.range;
         writeInfos[i].bufInfo.offset = w.offset;
@@ -280,6 +282,11 @@ void spock::end_immediate_command() {
 
 Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage) {
     // allocate buffer
+    Buffer buffer;
+    buffer.size = allocSize;
+
+    if (allocSize == 0) return buffer;
+
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     bufferInfo.pNext              = nullptr;
@@ -289,8 +296,6 @@ Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemor
     VmaAllocationCreateInfo vmaallocInfo = {};
     vmaallocInfo.usage                   = memoryUsage;
     vmaallocInfo.flags                   = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-    Buffer buffer;
-    buffer.size = allocSize;
     VK_CHECK(vmaCreateBuffer(ctx.allocator, &bufferInfo, &vmaallocInfo, &buffer.buffer, &buffer.allocation, &buffer.info));
     return buffer;
 }
@@ -505,6 +510,7 @@ void spock::create_swapchain(uint32_t width, uint32_t height) {
     vkb::Swapchain vkbSwapchain = swapchainBuilder
                                       //.use_default_format_selection()
                                       .set_desired_format(VkSurfaceFormatKHR{.format = ctx.swapchain.imageFormat, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR})
+                                      .set_required_min_image_count(2)
                                       //use vsync present mode
                                       .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
                                       .set_desired_extent(width, height)

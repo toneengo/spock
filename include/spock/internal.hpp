@@ -10,7 +10,7 @@
 #include <glm/glm.hpp>
 
 namespace spock {
-    constexpr uint32_t FRAME_OVERLAP = 1;
+    constexpr uint32_t FRAME_OVERLAP = 2;
     struct FrameContext {
         VkCommandPool               commandPool;
         VkCommandBuffer             commandBuffer;

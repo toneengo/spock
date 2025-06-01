@@ -16,6 +16,16 @@ namespace spock {
         return subImage;
     }
 
+    inline void copy_buffer(VkCommandBuffer cmd, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+    {
+        VkBufferCopy bufferCopy = {
+            .srcOffset = 0,
+            .dstOffset = 0,
+            .size = size
+        };
+        vkCmdCopyBuffer(cmd, srcBuffer, dstBuffer, 1, &bufferCopy);
+    }
+
     struct BarrierMask {
         VkPipelineStageFlags2 srcStageMask;
         VkAccessFlags2        srcAccessMask;
