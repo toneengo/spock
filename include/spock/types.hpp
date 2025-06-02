@@ -19,6 +19,8 @@ namespace spock {
         VkFormat      imageFormat = VK_FORMAT_UNDEFINED;
         uint32_t      index       = 0;
         VkImageLayout currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        VkPipelineStageFlagBits2 currentStage = VK_PIPELINE_STAGE_2_NONE;
+        VkAccessFlags2 currentAccess = VK_ACCESS_2_NONE;
     };
 
     struct Buffer {

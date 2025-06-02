@@ -331,7 +331,6 @@ Image spock::create_image(void* data, VkExtent3D size, VkFormat format, VkImageU
     begin_immediate_command();
 
     image_barrier(ctx.immCommandBuffer, new_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
             VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR, VK_ACCESS_2_MEMORY_WRITE_BIT_KHR);
 
     VkBufferImageCopy copyRegion = {};
@@ -349,7 +348,6 @@ Image spock::create_image(void* data, VkExtent3D size, VkFormat format, VkImageU
     vkCmdCopyBufferToImage(ctx.immCommandBuffer, uploadbuffer.buffer, new_image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
     image_barrier(ctx.immCommandBuffer, new_image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR | VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR,
             VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR,
             VK_ACCESS_2_SHADER_READ_BIT_KHR);
 
@@ -541,6 +539,8 @@ void spock::create_swapchain(uint32_t width, uint32_t height) {
         ctx.swapchain.images[i].image = images[i];
         ctx.swapchain.images[i].imageView = imageViews[i];
         ctx.swapchain.images[i].imageFormat = ctx.swapchain.imageFormat;
+        ctx.swapchain.images[i].currentStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        ctx.swapchain.images[i].currentAccess = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
     }
 }
 
