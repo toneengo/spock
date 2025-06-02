@@ -34,10 +34,10 @@ namespace spock {
     };
 
     inline void set_initial_image_layout(VkCommandBuffer cmd, spock::Image& image, VkImageLayout newLayout,
-                              VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_NONE,
-                              VkAccessFlags2        srcAccessMask = VK_ACCESS_2_NONE,
-                              VkPipelineStageFlags2 dstStageMask  = VK_PIPELINE_STAGE_2_NONE,
-                              VkAccessFlags2        dstAccessMask = VK_ACCESS_2_NONE)
+                              VkPipelineStageFlags2 srcStageMask,
+                              VkAccessFlags2        srcAccessMask,
+                              VkPipelineStageFlags2 dstStageMask,
+                              VkAccessFlags2        dstAccessMask)
     {
         VkImageMemoryBarrier2 imageBarrier{.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
         imageBarrier.pNext = nullptr;
