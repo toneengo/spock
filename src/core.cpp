@@ -54,7 +54,10 @@ static void init_device(SDL_Window* window) {
 
     vkb::InstanceBuilder builder;
     auto                 inst_ret = builder.set_app_name("vulkan app")
+#ifdef DBG
                         .request_validation_layers(gEnableValidationLayers)
+                        .enable_layer("VK_LAYER_KHRONOS_synchronization2")
+#endif
                         .use_default_debug_messenger()
                         .require_api_version(1, 3, 0)
                         .build();
@@ -325,9 +328,11 @@ Image spock::create_image(void* data, VkExtent3D size, VkFormat format, VkImageU
     memcpy(uploadbuffer.info.pMappedData, data, data_size);
 
     Image new_image = create_image(size, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, viewType, mipmapped);
-
     begin_immediate_command();
-    image_barrier(ctx.immCommandBuffer, new_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, true);
+
+    image_barrier(ctx.immCommandBuffer, new_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            VK_PIPELINE_STAGE_2_NONE, VK_ACCESS_2_NONE,
+            VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR, VK_ACCESS_2_MEMORY_WRITE_BIT_KHR);
 
     VkBufferImageCopy copyRegion = {};
     copyRegion.bufferOffset      = 0;
@@ -343,7 +348,11 @@ Image spock::create_image(void* data, VkExtent3D size, VkFormat format, VkImageU
     // copy the buffer into the image
     vkCmdCopyBufferToImage(ctx.immCommandBuffer, uploadbuffer.buffer, new_image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-    image_barrier(ctx.immCommandBuffer, new_image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    image_barrier(ctx.immCommandBuffer, new_image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+            VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR | VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT_KHR,
+            VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR,
+            VK_ACCESS_2_SHADER_READ_BIT_KHR);
+
     end_immediate_command();
 
     vmaDestroyBuffer(ctx.allocator, uploadbuffer.buffer, uploadbuffer.allocation);
@@ -510,7 +519,7 @@ void spock::create_swapchain(uint32_t width, uint32_t height) {
     vkb::Swapchain vkbSwapchain = swapchainBuilder
                                       //.use_default_format_selection()
                                       .set_desired_format(VkSurfaceFormatKHR{.format = ctx.swapchain.imageFormat, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR})
-                                      .set_required_min_image_count(spock::FRAME_OVERLAP)
+                                      .set_required_min_image_count(3)
                                       //use vsync present mode
                                       .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
                                       .set_desired_extent(width, height)

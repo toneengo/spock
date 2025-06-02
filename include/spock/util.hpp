@@ -33,10 +33,19 @@ namespace spock {
         VkAccessFlags2        dstAccessMask;
     };
 
-    inline void set_initial_image_layout(VkCommandBuffer cmd, spock::Image& image, VkImageLayout newLayout)
+    inline void set_initial_image_layout(VkCommandBuffer cmd, spock::Image& image, VkImageLayout newLayout,
+                              VkPipelineStageFlags2 srcStageMask = VK_PIPELINE_STAGE_2_NONE,
+                              VkAccessFlags2        srcAccessMask = VK_ACCESS_2_NONE,
+                              VkPipelineStageFlags2 dstStageMask  = VK_PIPELINE_STAGE_2_NONE,
+                              VkAccessFlags2        dstAccessMask = VK_ACCESS_2_NONE)
     {
         VkImageMemoryBarrier2 imageBarrier{.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2};
         imageBarrier.pNext = nullptr;
+
+        imageBarrier.srcStageMask  = srcStageMask;
+        imageBarrier.srcAccessMask = srcAccessMask;
+        imageBarrier.dstStageMask  = dstStageMask;
+        imageBarrier.dstAccessMask = dstAccessMask;
 
         imageBarrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         imageBarrier.newLayout = newLayout;
