@@ -27,7 +27,7 @@ namespace info {
     }
 
     namespace submit {
-        VkSemaphoreSubmitInfo     semaphore(VkPipelineStageFlags2 stageMask, VkSemaphore semaphore);
+        VkSemaphoreSubmitInfo     semaphore(VkPipelineStageFlags2 stageMask, VkSemaphore semaphore, uint64_t value = 1);
         VkCommandBufferSubmitInfo command_buffer(VkCommandBuffer cmd);
         VkSubmitInfo2             submit(VkCommandBufferSubmitInfo* cmd, VkSemaphoreSubmitInfo* signalSemaphoreInfo, VkSemaphoreSubmitInfo* waitSemaphoreInfo);
     }

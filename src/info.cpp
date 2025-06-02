@@ -97,14 +97,14 @@ VkCommandBufferBeginInfo info::begin::command_buffer(VkCommandBufferUsageFlags f
 }
 
 //VkRenderPassBeginInfo renderpass_begin(VkRenderPass renderPass, VkExtent2D windowExtent, VkFramebuffer framebuffer);
-VkSemaphoreSubmitInfo info::submit::semaphore(VkPipelineStageFlags2 stageMask, VkSemaphore semaphore) {
+VkSemaphoreSubmitInfo info::submit::semaphore(VkPipelineStageFlags2 stageMask, VkSemaphore semaphore, uint64_t value) {
     VkSemaphoreSubmitInfo submitInfo{};
     submitInfo.sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
     submitInfo.pNext       = nullptr;
     submitInfo.semaphore   = semaphore;
     submitInfo.stageMask   = stageMask;
     submitInfo.deviceIndex = 0;
-    submitInfo.value       = 1;
+    submitInfo.value       = value;
     return submitInfo;
 }
 
