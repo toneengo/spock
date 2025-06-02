@@ -10,11 +10,12 @@
 #include <glm/glm.hpp>
 
 namespace spock {
-    constexpr uint32_t FRAME_OVERLAP = 2;
+    constexpr uint32_t FRAME_OVERLAP = 3;
     struct FrameContext {
         VkCommandPool               commandPool;
         VkCommandBuffer             commandBuffer;
-        VkSemaphore                 swapchainSemaphore, renderSemaphore;
+        VkSemaphore                 swapchainSemaphore = VK_NULL_HANDLE,
+                                    renderSemaphore = VK_NULL_HANDLE;
         VkFence                     renderFence;
         spock::DestroyQueue        destroyQueue;
         spock::DescriptorAllocator descriptorAllocator;

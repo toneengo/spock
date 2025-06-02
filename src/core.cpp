@@ -510,7 +510,7 @@ void spock::create_swapchain(uint32_t width, uint32_t height) {
     vkb::Swapchain vkbSwapchain = swapchainBuilder
                                       //.use_default_format_selection()
                                       .set_desired_format(VkSurfaceFormatKHR{.format = ctx.swapchain.imageFormat, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR})
-                                      .set_required_min_image_count(2)
+                                      .set_required_min_image_count(spock::FRAME_OVERLAP)
                                       //use vsync present mode
                                       .set_desired_present_mode(VK_PRESENT_MODE_FIFO_KHR)
                                       .set_desired_extent(width, height)
