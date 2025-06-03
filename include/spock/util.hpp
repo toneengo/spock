@@ -137,42 +137,6 @@ namespace spock {
         info.flags = flags;
         vkBeginCommandBuffer(cmd, &info);
     }
-    inline void submit_command_buffer(VkCommandBuffer cmd, VkSemaphore* wait, VkPipelineStageFlagBits2 waitMask, VkSemaphore* signal, VkPipelineStageFlagBits2 signalMask, VkFence* fence) {
-        VkCommandBufferSubmitInfo cmdInfo = {
-            .sType         = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-            .pNext         = nullptr,
-            .commandBuffer = cmd,
-            .deviceMask    = 0,
-        };
-
-        VkSemaphoreSubmitInfo waitInfo = {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-            .semaphore = !wait ? nullptr : *wait,
-            .value = 1,
-            .stageMask = waitMask,
-            .deviceIndex = 0,
-        };
-
-        VkSemaphoreSubmitInfo signalInfo = {
-            .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-            .semaphore = !signal ? nullptr : *signal,
-            .value = 1,
-            .stageMask = signalMask,
-            .deviceIndex = 0,
-        };
-
-        VkSubmitInfo2 info =  {
-            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-            .waitSemaphoreInfoCount   = !wait   ? 0U : 1U,
-            .pWaitSemaphoreInfos      = !wait   ? nullptr : &waitInfo,
-            .signalSemaphoreInfoCount = !signal ? 0U : 1U,
-            .pSignalSemaphoreInfos    = !signal ? nullptr : &signalInfo,
-            .commandBufferInfoCount   = 1,
-            .pCommandBufferInfos      = &cmdInfo
-        };
-        vkQueueSubmit2(spock::ctx.graphicsQueue, 1, &info, !fence ? nullptr : *fence);
-    }
-
     inline void blit(VkCommandBuffer cmd, VkImage src, VkImage dst, VkRect2D srcRect, VkRect2D dstRect, VkFilter filter) {
         VkImageBlit2 blitRegion{.sType = VK_STRUCTURE_TYPE_IMAGE_BLIT_2, .pNext = nullptr};
 
