@@ -52,6 +52,10 @@ namespace spock {
 
     Image                 create_texture(const char* fileName, uint32_t index, VkDescriptorSet descriptorSet, uint32_t binding, VkSampler sampler, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped = false);
     void                  create_texture(Image& image, uint32_t index, VkDescriptorSet descriptorSet, uint32_t binding, VkSampler sampler);
+    VkCommandPool         create_command_pool(VkCommandPoolCreateFlags flags);
+    VkCommandBuffer       create_command_buffer(VkCommandPool pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    VkFence create_fence(VkFenceCreateFlagBits flags = VK_FENCE_CREATE_SIGNALED_BIT);
+    VkSemaphore create_semaphore();
 
     void                  destroy_image(Image image);
 

@@ -506,6 +506,53 @@ Image spock::create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags us
     return newImage;
 }
 
+VkCommandPool spock::create_command_pool(VkCommandPoolCreateFlags flags)
+{
+    VkCommandPoolCreateInfo commandPoolInfo = {};
+    commandPoolInfo.sType                   = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    commandPoolInfo.pNext                   = nullptr;
+    commandPoolInfo.flags                   = flags;
+    commandPoolInfo.queueFamilyIndex        = spock::ctx.graphicsQueueFamily;
+    VkCommandPool pool;
+    VK_CHECK(vkCreateCommandPool(spock::ctx.device, &commandPoolInfo, nullptr, &pool));
+    return pool;
+}
+
+VkCommandBuffer spock::create_command_buffer(VkCommandPool pool, VkCommandBufferLevel level)
+{
+    VkCommandBufferAllocateInfo cmdAllocInfo = {};
+    cmdAllocInfo.sType                       = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    cmdAllocInfo.pNext                       = nullptr;
+    cmdAllocInfo.commandPool                 = pool;
+    cmdAllocInfo.commandBufferCount          = 1;
+    cmdAllocInfo.level                       = level;
+    VkCommandBuffer cmd;
+    VK_CHECK(vkAllocateCommandBuffers(spock::ctx.device, &cmdAllocInfo, &cmd));
+    return cmd;
+}
+
+VkFence spock::create_fence(VkFenceCreateFlagBits flags)
+{
+    VkFenceCreateInfo info = {};
+    info.sType             = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    info.pNext             = nullptr;
+    info.flags             = flags;
+    VkFence fence;
+    VK_CHECK(vkCreateFence(spock::ctx.device, &info, nullptr, &fence));
+
+    return fence;
+}
+
+VkSemaphore spock::create_semaphore()
+{
+    VkSemaphoreCreateInfo info = {};
+    info.sType                 = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    info.pNext                 = nullptr;
+    info.flags                 = 0;
+    VkSemaphore semaphore;
+    VK_CHECK(vkCreateSemaphore(spock::ctx.device, &info, nullptr, &semaphore));
+    return semaphore;
+}
 void spock::destroy_image(Image image)
 {
     vmaDestroyImage(spock::ctx.allocator, image.image, image.allocation);
