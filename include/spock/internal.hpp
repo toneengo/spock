@@ -63,8 +63,6 @@ namespace spock {
 
         Swapchain            swapchain;
         spock::DestroyQueue destroyQueue;
-
-        bool resizeRequested = true;
     } ctx;
 
     inline uint32_t         get_frame_number() {

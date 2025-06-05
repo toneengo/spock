@@ -211,8 +211,8 @@ union DescriptorWriteInfo {
     VkDescriptorImageInfo  imgInfo;
 };
 void spock::update_descriptor_sets(std::initializer_list<ImageWrite> imageWrites, std::initializer_list<BufferWrite> bufferWrites) {
-    VkWriteDescriptorSet writeSets[32]; //max 32 writes for now
-    DescriptorWriteInfo  writeInfos[32];
+    static VkWriteDescriptorSet writeSets[32]; //max 32 writes for now
+    static DescriptorWriteInfo  writeInfos[32];
 
     int                  i = 0;
     for (auto& w : imageWrites) {

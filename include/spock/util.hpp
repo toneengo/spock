@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <initializer_list>
 #include "types.hpp"
+#include "core.hpp"
 #include "spock/internal.hpp"
 
 namespace spock {
@@ -17,8 +18,26 @@ namespace spock {
         return subImage;
     }
 
+    //only use in initialization
+    inline void imm_copy_to_buffer(VkBuffer dstBuffer, void* data, VkDeviceSize size)
+    {
+        spock::Buffer staging = spock::create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
+        memcpy(staging.info.pMappedData, data, size);
+        spock::begin_immediate_command();
+        VkBufferCopy vertexCopy{
+            .srcOffset = 0,
+            .dstOffset = 0,
+            .size =size 
+        };
+
+        vkCmdCopyBuffer(spock::ctx.immCommandBuffer, staging.buffer, dstBuffer, 1, &vertexCopy);
+        spock::end_immediate_command();
+        destroy_buffer(staging);
+    }
+
     inline void copy_buffer(VkCommandBuffer cmd, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
     {
+        if (size == 0) return;
         VkBufferCopy bufferCopy = {
             .srcOffset = 0,
             .dstOffset = 0,
