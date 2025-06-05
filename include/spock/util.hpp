@@ -224,7 +224,7 @@ namespace spock {
     {
         //max 16 color attachments
         assert(color.size() < 16);
-        VkRenderingAttachmentInfo colorAttachments[16];
+        static VkRenderingAttachmentInfo colorAttachments[16];
         VkRenderingAttachmentInfo depthAttachment = {};
         VkRenderingAttachmentInfo stencilAttachment = {};
         int i = 0;
