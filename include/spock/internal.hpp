@@ -11,16 +11,6 @@
 
 namespace spock {
     constexpr uint32_t FRAME_OVERLAP = 3;
-    struct FrameContext {
-        VkCommandPool               commandPool;
-        VkCommandBuffer             commandBuffer;
-        VkSemaphore                 swapchainSemaphore = VK_NULL_HANDLE,
-                                    renderSemaphore = VK_NULL_HANDLE;
-        VkFence                     renderFence;
-        spock::DestroyQueue        destroyQueue;
-        spock::DescriptorAllocator descriptorAllocator;
-    };
-
     inline struct RenderContext {
         bool                        initialised = false;
         VkDevice                    device;
@@ -32,15 +22,6 @@ namespace spock {
         uint32_t                    graphicsQueueFamily;
         VmaAllocator                allocator;
 
-        FrameContext                frames[FRAME_OVERLAP];
-
-        uint32_t                    frameIdx = 0;
-
-        //command buffer for immediate commands
-        VkCommandPool   immCommandPool;
-        VkCommandBuffer immCommandBuffer;
-        VkFence         immCommandFence;
-
         SDL_Window*     window;
         VkExtent2D      windowExtent = {800, 600};
         VkExtent3D      screenExtent; //desktop resolution
@@ -49,8 +30,9 @@ namespace spock {
         struct Swapchain {
             VkSwapchainKHR           swapchain;
             std::vector<spock::Image>images;
+            std::vector<VkImageView> views;
             VkExtent2D               extent;
-            VkFormat imageFormat;
+            VkFormat format;
         };
 
         //settable by the "user"
@@ -65,15 +47,6 @@ namespace spock {
         spock::DestroyQueue destroyQueue;
     } ctx;
 
-    inline uint32_t         get_frame_number() {
-        return ctx.frameIdx % FRAME_OVERLAP;
-    }
-    inline FrameContext&         get_frame() {
-        return ctx.frames[ctx.frameIdx % FRAME_OVERLAP];
-    }
-    inline void         finish_frame() {
-        ctx.frameIdx++;
-    }
     inline DestroyQueue destroyQueue;
 
 #ifdef DBG

@@ -2,8 +2,6 @@
 
 #include <glm/glm.hpp>
 
-#include "spock/info.hpp"
-
 #include "vk_mem_alloc.h"
 
 #include "VkBootstrap.h"
@@ -17,7 +15,6 @@
 #include "spock/internal.hpp"
 #include "spock/destroy.hpp"
 #include "spock/shader.hpp"
-#include "spock/util.hpp"
 
 #ifdef DBG
 const bool gEnableValidationLayers = true;
@@ -29,8 +26,8 @@ using namespace spock;
 
 void spock::destroy_swapchain() {
     vkDestroySwapchainKHR(ctx.device, ctx.swapchain.swapchain, nullptr);
-    for (const auto& im : ctx.swapchain.images) {
-        vkDestroyImageView(ctx.device, im.imageView, nullptr);
+    for (const auto& v : ctx.swapchain.views) {
+        vkDestroyImageView(ctx.device, v, nullptr);
     }
 
     ctx.swapchain.images.clear();
@@ -125,41 +122,17 @@ static void init_swapchain() {
     create_swapchain(ctx.windowExtent.width, ctx.windowExtent.height);
 }
 
-void init_commands() {
-    //create frame command pools
-    auto commandPoolInfo = info::create::command_pool(ctx.graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    for (int i = 0; i < FRAME_OVERLAP; i++) {
-        VK_CHECK(vkCreateCommandPool(ctx.device, &commandPoolInfo, nullptr, &ctx.frames[i].commandPool));
-        VkCommandBufferAllocateInfo cmdAllocInfo = info::allocate::command_buffer(ctx.frames[i].commandPool, 1);
-        VK_CHECK(vkAllocateCommandBuffers(ctx.device, &cmdAllocInfo, &ctx.frames[i].commandBuffer));
-    }
-
-    VK_CHECK(vkCreateCommandPool(ctx.device, &commandPoolInfo, nullptr, &ctx.immCommandPool));
-    VkCommandBufferAllocateInfo cmdAllocInfo = info::allocate::command_buffer(ctx.immCommandPool, 1);
-    VK_CHECK(vkAllocateCommandBuffers(ctx.device, &cmdAllocInfo, &ctx.immCommandBuffer));
-    QUEUE_DESTROY_OBJ(ctx.immCommandPool);
-}
-
-static void init_synchronization() {
-    //create synchronization structures
-    VkFenceCreateInfo     fence     = info::create::fence(VK_FENCE_CREATE_SIGNALED_BIT);
-    VkSemaphoreCreateInfo semaphore = info::create::semaphore();
-
-    for (int i = 0; i < FRAME_OVERLAP; i++) {
-        VK_CHECK(vkCreateFence(ctx.device, &fence, nullptr, &ctx.frames[i].renderFence));
-        VK_CHECK(vkCreateSemaphore(ctx.device, &semaphore, nullptr, &ctx.frames[i].swapchainSemaphore));
-        VK_CHECK(vkCreateSemaphore(ctx.device, &semaphore, nullptr, &ctx.frames[i].renderSemaphore));
-    }
-    VK_CHECK(vkCreateFence(ctx.device, &fence, nullptr, &ctx.immCommandFence));
-    QUEUE_DESTROY_OBJ(ctx.immCommandFence);
-}
-
 void spock::init(SDL_Window* window)
 {
     init_device(window);
     init_swapchain();
-    init_commands();
-    init_synchronization();
+
+    immCommandFence = create_fence(VK_FENCE_CREATE_SIGNALED_BIT);
+    immCommandPool = create_command_pool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    immCommandBuffer = create_command_buffer(immCommandPool);
+
+    QUEUE_DESTROY_OBJ(immCommandPool);
+    QUEUE_DESTROY_OBJ(immCommandFence);
 
     ctx.initialised = true;
 }
@@ -210,7 +183,7 @@ union DescriptorWriteInfo {
     VkDescriptorBufferInfo bufInfo;
     VkDescriptorImageInfo  imgInfo;
 };
-void spock::update_descriptor_sets(std::initializer_list<ImageWrite> imageWrites, std::initializer_list<BufferWrite> bufferWrites) {
+void spock::write_descriptor_sets(std::initializer_list<ImageWrite> imageWrites, std::initializer_list<BufferWrite> bufferWrites) {
     static VkWriteDescriptorSet writeSets[32]; //max 32 writes for now
     static DescriptorWriteInfo  writeInfos[32];
 
@@ -267,20 +240,17 @@ void spock::update_descriptor_sets(std::initializer_list<ImageWrite> imageWrites
 }
 
 void spock::begin_immediate_command() {
-    VK_CHECK(vkResetFences(ctx.device, 1, &ctx.immCommandFence));
-    VK_CHECK(vkResetCommandBuffer(ctx.immCommandBuffer, 0));
-    VkCommandBufferBeginInfo cmdBeginInfo = info::begin::command_buffer(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    VK_CHECK(vkBeginCommandBuffer(ctx.immCommandBuffer, &cmdBeginInfo));
+    VK_CHECK(vkResetFences(ctx.device, 1, &immCommandFence));
+    VK_CHECK(vkResetCommandBuffer(immCommandBuffer, 0));
+    begin_command_buffer(immCommandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 }
 
 void spock::end_immediate_command() {
-    VK_CHECK(vkEndCommandBuffer(ctx.immCommandBuffer));
-    VkCommandBufferSubmitInfo cmdinfo = info::submit::command_buffer(ctx.immCommandBuffer);
-    VkSubmitInfo2             submit  = info::submit::submit(&cmdinfo, nullptr, nullptr);
-    // submit command buffer to the queue and execute it.
-    //  _renderFence will now block until the graphic commands finish execution
-    VK_CHECK(vkQueueSubmit2(ctx.graphicsQueue, 1, &submit, ctx.immCommandFence));
-    VK_CHECK(vkWaitForFences(ctx.device, 1, &ctx.immCommandFence, true, 9999999999));
+    VK_CHECK(vkEndCommandBuffer(immCommandBuffer));
+    submit_command_buffer(
+        {immCommandBuffer}, {}, {}, immCommandFence
+    );
+    VK_CHECK(vkWaitForFences(ctx.device, 1, &immCommandFence, true, 9999999999));
 }
 
 Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage) {
@@ -303,6 +273,13 @@ Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemor
     return buffer;
 }
 
+Buffer spock::create_buffer(void* data, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage)
+{
+    Buffer buffer = create_buffer(allocSize, usage, memoryUsage);
+    imm_copy_to_buffer(buffer.buffer, data, allocSize);
+    return buffer;
+}
+
 void spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size) {
 
     Buffer uploadbuffer = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
@@ -315,25 +292,25 @@ void spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, V
     bufferCopy.dstOffset = dstOffset;
     bufferCopy.size = size;
 
-    vkCmdCopyBuffer(ctx.immCommandBuffer, uploadbuffer.buffer, buffer, 1, &bufferCopy);
+    vkCmdCopyBuffer(immCommandBuffer, uploadbuffer.buffer, buffer, 1, &bufferCopy);
     end_immediate_command();
 
     vmaDestroyBuffer(ctx.allocator, uploadbuffer.buffer, uploadbuffer.allocation);
 }
 
-Image spock::create_image(void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped) {
-    size_t data_size    = size.depth * size.width * size.height * 4;
+Image spock::create_image(void* data, VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, uint32_t mipLevels) {
+    size_t data_size    = extent.depth * extent.width * extent.height * 4;
     Buffer uploadbuffer = create_buffer(data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU);
 
     memcpy(uploadbuffer.info.pMappedData, data, data_size);
 
-    Image new_image = create_image(size, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, viewType, mipmapped);
+    Image new_image = create_image(extent, VK_IMAGE_TYPE_2D, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, mipLevels);
     begin_immediate_command();
 
-    image_barrier(ctx.immCommandBuffer, new_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-            VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR, VK_ACCESS_2_MEMORY_WRITE_BIT_KHR);
+    image_barrier(immCommandBuffer, new_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_2_TRANSFER_BIT_KHR, VK_ACCESS_2_MEMORY_WRITE_BIT_KHR);
 
     VkBufferImageCopy copyRegion = {};
+
     copyRegion.bufferOffset      = 0;
     copyRegion.bufferRowLength   = 0;
     copyRegion.bufferImageHeight = 0;
@@ -342,12 +319,12 @@ Image spock::create_image(void* data, VkExtent3D size, VkFormat format, VkImageU
     copyRegion.imageSubresource.mipLevel       = 0;
     copyRegion.imageSubresource.baseArrayLayer = 0;
     copyRegion.imageSubresource.layerCount     = 1;
-    copyRegion.imageExtent                     = size;
+    copyRegion.imageExtent                     = extent;
 
     // copy the buffer into the image
-    vkCmdCopyBufferToImage(ctx.immCommandBuffer, uploadbuffer.buffer, new_image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
+    vkCmdCopyBufferToImage(immCommandBuffer, uploadbuffer.buffer, new_image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-    image_barrier(ctx.immCommandBuffer, new_image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+    image_barrier(immCommandBuffer, new_image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
             VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR,
             VK_ACCESS_2_SHADER_READ_BIT_KHR);
 
@@ -358,7 +335,7 @@ Image spock::create_image(void* data, VkExtent3D size, VkFormat format, VkImageU
     return new_image;
 }
 
-Image spock::create_image(const char* fileName, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped)
+Image spock::create_image(const char* fileName, VkImageUsageFlags usage, uint32_t mipLevels)
 {
     VkExtent3D     extent{};
     int            width = 0, height = 0;
@@ -383,127 +360,137 @@ Image spock::create_image(const char* fileName, VkImageUsageFlags usage, VkImage
         extent.depth          = 1;
     }
 
-    auto image = create_image(pixels, extent, VK_FORMAT_R8G8B8A8_UNORM, usage, viewType, mipmapped);
+    auto image = create_image(pixels, extent, VK_FORMAT_R8G8B8A8_UNORM, usage, mipLevels);
     if (empty) free(pixels);
     else stbi_image_free(pixels);
     return image;
 }
 
-Image spock::create_texture(const char* fileName, uint32_t index, VkDescriptorSet descriptorSet, uint32_t binding, VkSampler sampler, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped) {
-    auto image = create_image(fileName, usage, viewType, mipmapped);
-    update_descriptor_sets(
-        {{descriptorSet, binding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, sampler, image.imageView, VK_IMAGE_LAYOUT_GENERAL, index}}, {});
+spock::Image spock::create_image(VkExtent3D extent, VkImageType type, VkFormat format, VkImageUsageFlags usage, uint32_t mipLevels) {
+    spock::Image image;
+    image.format = format;
+    image.extent = extent;
 
-    destroyQueue.push(image);
-    destroyQueue.push(image.imageView);
+    VkImageCreateInfo info = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType = type,
+        .format = format,
+        .extent = extent,
+        .usage = usage,
+        .mipLevels = mipLevels,
+        .arrayLayers = type == VK_IMAGE_TYPE_3D ? 1 : type == VK_IMAGE_TYPE_2D ? extent.depth : extent.height,
+        .samples = VK_SAMPLE_COUNT_1_BIT,
+        .tiling = VK_IMAGE_TILING_OPTIMAL,
+        .usage = usage,
+    };
+
+    switch(type)
+    {
+        case VK_IMAGE_TYPE_2D:
+        info.extent.depth = 1;
+        break;
+        case VK_IMAGE_TYPE_1D:
+        info.extent.height = 1;
+        info.extent.depth = 1;
+        break;
+        default:
+        break;
+    }
+
+    VmaAllocationCreateInfo alloc = {
+        .usage = VMA_MEMORY_USAGE_GPU_ONLY,
+        .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+    };
+
+    VK_CHECK(vmaCreateImage(ctx.allocator, &info, &alloc, &image.image, &image.allocation, nullptr));
+
     return image;
 }
-void spock::create_texture(Image& image, uint32_t index, VkDescriptorSet descriptorSet, uint32_t binding, VkSampler sampler)
+
+VkImageView spock::create_image_view(const spock::Image& image, VkImageViewType viewType, VkExtent3D extent, uint32_t baseMipLevel, uint32_t mipLevels, uint32_t baseArrayLayer)
 {
-    if (image.image == VK_NULL_HANDLE || image.imageView == VK_NULL_HANDLE) {
-        return;
+    VkImageViewCreateInfo info = {
+        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+        .image = image.image,
+        .viewType = viewType,
+        .format = image.format,
+        .subresourceRange.baseMipLevel = baseMipLevel,
+        .subresourceRange.levelCount = mipLevels,
+        .subresourceRange.baseArrayLayer = baseArrayLayer
     };
-    image.index = index;
-    update_descriptor_sets(
-        {{descriptorSet, binding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, sampler, image.imageView, VK_IMAGE_LAYOUT_GENERAL, index}}, {});
+
+    //may need more
+    switch(info.format)
+    {
+        case VK_FORMAT_D32_SFLOAT:
+        case VK_FORMAT_D16_UNORM_S8_UINT:
+        case VK_FORMAT_D24_UNORM_S8_UINT:
+        case VK_FORMAT_D32_SFLOAT_S8_UINT:
+        case VK_FORMAT_D16_UNORM:
+        info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        break;
+        default:
+        info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        break;
+    }
+
+    switch(viewType)
+    {
+        case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
+        case VK_IMAGE_VIEW_TYPE_CUBE:
+        case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
+        info.subresourceRange.layerCount = extent.depth;
+        break;
+        case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
+        info.subresourceRange.layerCount = extent.height;
+        break;
+        default:
+        info.subresourceRange.layerCount = 1;
+        break;
+    }
+
+    VkImageView view;
+    VK_CHECK(vkCreateImageView(ctx.device, &info, nullptr, &view));
+
+    return view;
 }
 
-Image spock::create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped) {
-    Image newImage;
-    newImage.imageFormat = format;
-
-    //not the actual extent of the image, just the user input
-    newImage.imageExtent = size;
-
-    VkImageCreateInfo img_info = info::create::image(format, usage, size);
-    img_info.mipLevels = mipmapped ? static_cast<uint32_t>(std::floor(std::log2(std::max(size.width, size.height)))) + 1 : 1;
-
-    VkImageSubresourceRange subresourceRange {
-        .baseMipLevel = 0,
-        .levelCount = img_info.mipLevels,
-        .baseArrayLayer = 0,
-    };
+spock::Image spock::create_image_and_view(VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, uint32_t mipLevels)
+{
+    VkImageType type;
+    uint32_t layerCount;
 
     switch (viewType)
     {
         case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
-            assert(size.depth <= 1);
-            img_info.imageType = VK_IMAGE_TYPE_1D;
-            img_info.arrayLayers = size.height;
-            img_info.extent = {size.width, 1, 1};
-            subresourceRange.layerCount = size.height;
-            break;
-
-        case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
-            img_info.imageType = VK_IMAGE_TYPE_2D;
-            img_info.arrayLayers = size.depth;
-            img_info.extent = {size.width, size.height, 1};
-            subresourceRange.layerCount = size.depth;
-            break;
-
-        case VK_IMAGE_VIEW_TYPE_2D:
-            assert(size.depth <= 1);
-            img_info.imageType = VK_IMAGE_TYPE_2D;
-            img_info.arrayLayers = 1;
-            subresourceRange.layerCount = 1;
-            img_info.extent = {size.width, size.height, 1};
-            break;
-
         case VK_IMAGE_VIEW_TYPE_1D:
-            assert(size.height <= 1 && size.depth <= 1);
-            img_info.imageType = VK_IMAGE_TYPE_1D;
-            img_info.arrayLayers = 1;
-            subresourceRange.layerCount = 1;
-            img_info.extent = {size.width, 1, 1};
-            break;
+        type = VK_IMAGE_TYPE_1D;
+        break;
 
-        //idk if these are right
         case VK_IMAGE_VIEW_TYPE_3D:
-            img_info.imageType = VK_IMAGE_TYPE_3D;
-            img_info.arrayLayers = 1;
-            img_info.extent = {size.width, size.height, size.depth};
-            subresourceRange.layerCount = 1;
-            break;
+        type = VK_IMAGE_TYPE_3D;
+        break;
+
         case VK_IMAGE_VIEW_TYPE_CUBE:
-            assert(size.depth <= 1);
-            img_info.imageType = VK_IMAGE_TYPE_2D;
-            img_info.arrayLayers = 6;
-            img_info.extent = {size.width, size.height, 1};
-            subresourceRange.layerCount = 6;
-            break;
-
         case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
-            img_info.imageType = VK_IMAGE_TYPE_2D;
-            img_info.arrayLayers = size.depth * 6;
-            img_info.extent = {size.width, size.height, 1};
-            subresourceRange.layerCount = size.depth * 6;
-            break;
-
+        case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
+        case VK_IMAGE_VIEW_TYPE_2D:
+        type = VK_IMAGE_TYPE_2D;
+        break;
 
         default:
-            break;
+        break;
     }
 
-    // if the format is a depth format, we will need to have it use the correct
-    // aspect flag
-    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    if (format == VK_FORMAT_D32_SFLOAT) {
-        subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    }
+    spock::Image image = create_image(extent, type, format, usage, mipLevels);
+    image.view = create_image_view(image, viewType, extent, 0, mipLevels, 0);
 
-    // always allocate images on dedicated GPU memory
-    VmaAllocationCreateInfo allocinfo = {};
-    allocinfo.usage                   = VMA_MEMORY_USAGE_GPU_ONLY;
-    allocinfo.requiredFlags           = VkMemoryPropertyFlags(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    //not the actual extent of the image, just the user input
+    image.extent = extent;
+    image.currentStage = VK_PIPELINE_STAGE_2_NONE;
+    image.currentAccess = VK_ACCESS_2_NONE;
 
-    VK_CHECK(vmaCreateImage(ctx.allocator, &img_info, &allocinfo, &newImage.image, &newImage.allocation, nullptr));
-
-    // build a image-view for the image
-    VkImageViewCreateInfo view_info       = info::create::image_view(format, newImage.image, viewType, subresourceRange);
-
-    VK_CHECK(vkCreateImageView(ctx.device, &view_info, nullptr, &newImage.imageView));
-
-    return newImage;
+    return image;
 }
 
 VkCommandPool spock::create_command_pool(VkCommandPoolCreateFlags flags)
@@ -556,14 +543,23 @@ VkSemaphore spock::create_semaphore()
 void spock::destroy_image(Image image)
 {
     vmaDestroyImage(spock::ctx.allocator, image.image, image.allocation);
-    vkDestroyImageView(spock::ctx.device, image.imageView, nullptr);
+    if (image.view != VK_NULL_HANDLE)
+    {
+        vkDestroyImageView(ctx.device, image.view, nullptr);
+    }
 }
+
+void spock::destroy_image_view(VkImageView view)
+{
+    vkDestroyImageView(ctx.device, view, nullptr);
+}
+
 void spock::create_swapchain(uint32_t width, uint32_t height) {
     vkb::SwapchainBuilder swapchainBuilder{ctx.physicalDevice, ctx.device, ctx.surface};
-    ctx.swapchain.imageFormat   = VK_FORMAT_B8G8R8A8_UNORM;
+    ctx.swapchain.format   = VK_FORMAT_B8G8R8A8_UNORM;
     vkb::Swapchain vkbSwapchain = swapchainBuilder
                                       //.use_default_format_selection()
-                                      .set_desired_format(VkSurfaceFormatKHR{.format = ctx.swapchain.imageFormat, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR})
+                                      .set_desired_format(VkSurfaceFormatKHR{.format = ctx.swapchain.format, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR})
                                       .set_required_min_image_count(3)
                                       //use vsync present mode
                                       .set_desired_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR)
@@ -577,15 +573,16 @@ void spock::create_swapchain(uint32_t width, uint32_t height) {
     //store swapchain and its related images
     ctx.swapchain.swapchain = vkbSwapchain.swapchain;
 
-    auto imageViews = vkbSwapchain.get_image_views().value();
+    auto views = vkbSwapchain.get_image_views().value();
     auto images = vkbSwapchain.get_images().value();
 
     ctx.swapchain.images.resize(images.size());
+    ctx.swapchain.views.resize(views.size());
     for (int i = 0; i < ctx.swapchain.images.size(); i++)
     {
         ctx.swapchain.images[i].image = images[i];
-        ctx.swapchain.images[i].imageView = imageViews[i];
-        ctx.swapchain.images[i].imageFormat = ctx.swapchain.imageFormat;
+        ctx.swapchain.views[i] = views[i];
+        ctx.swapchain.images[i].format = ctx.swapchain.format;
         ctx.swapchain.images[i].currentStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
         ctx.swapchain.images[i].currentAccess = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
     }
@@ -596,17 +593,6 @@ void spock::cleanup() {
         return;
 
     vkDeviceWaitIdle(ctx.device);
-    for (int i = 0; i < FRAME_OVERLAP; i++) {
-        vkDestroyCommandPool(ctx.device, ctx.frames[i].commandPool, nullptr);
-
-        //destroy sync objects
-        vkDestroyFence(ctx.device, ctx.frames[i].renderFence, nullptr);
-        vkDestroySemaphore(ctx.device, ctx.frames[i].renderSemaphore, nullptr);
-        vkDestroySemaphore(ctx.device, ctx.frames[i].swapchainSemaphore, nullptr);
-
-        ctx.frames[i].descriptorAllocator.destroy_pools();
-        ctx.frames[i].destroyQueue.flush();
-    }
 
     destroyQueue.flush();
 
@@ -617,7 +603,6 @@ void spock::cleanup() {
 
     vkb::destroy_debug_utils_messenger(ctx.instance, ctx.debugMessenger);
     vkDestroyInstance(ctx.instance, nullptr);
-    SDL_DestroyWindow(ctx.window);
 }
 
 void spock::destroy_buffer(Buffer buffer) {

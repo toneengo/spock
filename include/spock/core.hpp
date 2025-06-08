@@ -11,6 +11,11 @@
 namespace spock {
     void  clean_init();
 
+    //command buffer for immediate commands
+    inline VkCommandPool   immCommandPool;
+    inline VkCommandBuffer immCommandBuffer;
+    inline VkFence         immCommandFence;
+
     struct ImageWrite {
         VkDescriptorSet  descriptorSet;
         uint32_t         binding;
@@ -32,7 +37,7 @@ namespace spock {
         uint32_t         count = 1;
     };
 
-    void                  update_descriptor_sets(std::initializer_list<ImageWrite> imageWrites, std::initializer_list<BufferWrite> bufferWrites);
+    void                  write_descriptor_sets(std::initializer_list<ImageWrite> imageWrites, std::initializer_list<BufferWrite> bufferWrites);
 
     void                  init(SDL_Window* window);
     void                  process_SDL_event(const SDL_Event& event);
@@ -41,17 +46,18 @@ namespace spock {
     VkDescriptorSetLayout create_descriptor_set_layout(std::initializer_list<Binding> _bindings, VkShaderStageFlags shaderStages, VkDescriptorSetLayoutCreateFlags flags = 0);
     VkPipelineLayout      create_pipeline_layout(std::initializer_list<VkDescriptorSetLayout> dsLayouts, std::initializer_list<VkPushConstantRange> psRanges);
 
-    Image                 create_image_from_pixels(void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped = false);
+    Image                 create_image(VkExtent3D extent, VkImageType type, VkFormat format, VkImageUsageFlags usage, uint32_t mipLevels = 1);
+    Image                 create_image(void* data, VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, uint32_t mipLevels = 1);
+    Image                 create_image(const char* fileName, VkImageUsageFlags usage, uint32_t mipLevels = 1);
+    VkImageView           create_image_view(const spock::Image& image, VkImageViewType viewType, VkExtent3D extent, uint32_t baseMipLevel = 0, uint32_t mipLevels = 1, uint32_t baseArrayLayer = 0);
+    inline VkImageView    create_image_view(const spock::Image& image, VkImageViewType viewType, VkExtent2D extent, uint32_t baseMipLevel = 0, uint32_t mipLevels = 1, uint32_t baseArrayLayer = 0)
+    { create_image_view(image, viewType, {extent.width, extent.height, 1}, baseMipLevel, mipLevels, baseArrayLayer); }
+    // global imageview
+    spock::Image          create_image_and_view(VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, uint32_t mipLevels = 1);
+    inline Image          create_image_and_view(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, uint32_t mipLevels = 1)
+    { return create_image_and_view({extent.width, extent.height, 1}, format, usage, viewType, mipLevels); }
+    void                  destroy_image_view(VkImageView view);
 
-    Image                 create_image(VkExtent3D size, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped = false);
-    inline Image          create_image(VkExtent2D size, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped = false)
-        { return create_image(VkExtent3D{.width = size.width, .height = size.height, .depth = 1}, format, usage, viewType, mipmapped); }
-
-    Image                 create_image(void* data, VkExtent3D size, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped = false);
-    Image                 create_image(const char* fileName, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped = false);
-
-    Image                 create_texture(const char* fileName, uint32_t index, VkDescriptorSet descriptorSet, uint32_t binding, VkSampler sampler, VkImageUsageFlags usage, VkImageViewType viewType, bool mipmapped = false);
-    void                  create_texture(Image& image, uint32_t index, VkDescriptorSet descriptorSet, uint32_t binding, VkSampler sampler);
     VkCommandPool         create_command_pool(VkCommandPoolCreateFlags flags);
     VkCommandBuffer       create_command_buffer(VkCommandPool pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
     VkFence create_fence(VkFenceCreateFlagBits flags = VK_FENCE_CREATE_SIGNALED_BIT);
@@ -60,6 +66,7 @@ namespace spock {
     void                  destroy_image(Image image);
 
     Buffer                create_buffer(size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
+    Buffer                create_buffer(void* data, size_t allocSize, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage);
 
     // ONLY use for gpu-only buffers at initialisation
     void copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size);
@@ -68,7 +75,6 @@ namespace spock {
     void                  destroy_swapchain();
     void                  create_swapchain(uint32_t width, uint32_t height);
 
-    VkCommandBuffer       get_immediate_command_buffer();
     void                  begin_immediate_command();
     void                  end_immediate_command();
 

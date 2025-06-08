@@ -48,7 +48,10 @@ struct GraphicsPipelineBuilder {
     std::vector<VkViewport> viewports;
     std::vector<VkRect2D> scissors;
     VkPipelineRasterizationStateCreateInfo           rasterizationState = {.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO};
-    VkPipelineMultisampleStateCreateInfo             multisampleState   = {.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO};
+    VkPipelineMultisampleStateCreateInfo             multisampleState   = {
+        .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+        .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+    };
     VkPipelineDepthStencilStateCreateInfo            depthStencilState  = {.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO};
     std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachmentStates;
     std::vector<VkDynamicState>                      dynamicStates;

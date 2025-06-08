@@ -240,13 +240,25 @@ VkPipeline GraphicsPipelineBuilder::build() {
     info.pRasterizationState               = &rasterizationState;
     info.pMultisampleState                 = &multisampleState;
     info.pDepthStencilState                = &depthStencilState;
+    VkPipelineColorBlendAttachmentState defaultColorBlend = {
+        .blendEnable = false,
+        .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT
+    };
+    if (colorBlendAttachmentStates.size() < colorAttachmentFormats.size())
+    {
+        int diff = colorAttachmentFormats.size() - colorBlendAttachmentStates.size();
+        for (int i = 0; i < diff; i++)
+        {
+            colorBlendAttachmentStates.push_back(defaultColorBlend);
+        }
+    }
     VkPipelineColorBlendStateCreateInfo _c = {
         .sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
         .pNext           = VK_NULL_HANDLE,
         .flags           = 0,
         .logicOpEnable   = VK_FALSE,
         .logicOp         = VK_LOGIC_OP_COPY,
-        .attachmentCount = uint32_t(colorBlendAttachmentStates.size()),
+        .attachmentCount = uint32_t(colorAttachmentFormats.size()),
         .pAttachments    = colorBlendAttachmentStates.data(),
     };
 

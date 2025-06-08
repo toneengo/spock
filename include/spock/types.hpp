@@ -13,10 +13,11 @@ namespace spock {
 
     struct Image {
         VkImage       image       = VK_NULL_HANDLE;
-        VkImageView   imageView   = VK_NULL_HANDLE;
+        // global image view if explicitly stated
+        VkImageView   view        = VK_NULL_HANDLE;
         VmaAllocation allocation  = VK_NULL_HANDLE;
-        VkExtent3D    imageExtent = {};
-        VkFormat      imageFormat = VK_FORMAT_UNDEFINED;
+        VkExtent3D    extent = {};
+        VkFormat      format = VK_FORMAT_UNDEFINED;
         uint32_t      index       = 0;
         VkImageLayout currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         VkPipelineStageFlagBits2 currentStage = VK_PIPELINE_STAGE_2_NONE;
