@@ -53,7 +53,7 @@ static void init_device(SDL_Window* window) {
     auto                 inst_ret = builder.set_app_name("vulkan app")
 #ifdef DBG
                         .request_validation_layers(gEnableValidationLayers)
-                        .enable_layer("VK_LAYER_KHRONOS_synchronization2")
+                        //.enable_layer("VK_LAYER_KHRONOS_synchronization2")
 #endif
                         .use_default_debug_messenger()
                         .require_api_version(1, 3, 0)
@@ -192,6 +192,7 @@ void spock::write_descriptor_sets(std::initializer_list<ImageWrite> imageWrites,
 #ifdef DBG
         assert(i < 32);
 #endif
+        if (w.imageView == VK_NULL_HANDLE) continue;
         writeInfos[i].imgInfo.sampler     = w.sampler;
         writeInfos[i].imgInfo.imageView   = w.imageView;
         writeInfos[i].imgInfo.imageLayout = w.imageLayout;
@@ -215,7 +216,7 @@ void spock::write_descriptor_sets(std::initializer_list<ImageWrite> imageWrites,
 #ifdef DBG
         assert(i < 32);
 #endif
-        if (w.range == 0) continue;
+        if (w.range == 0 || w.buffer == VK_NULL_HANDLE) continue;
 
         writeInfos[i].bufInfo.buffer = w.buffer;
         writeInfos[i].bufInfo.range  = w.range;
@@ -376,7 +377,6 @@ spock::Image spock::create_image(VkExtent3D extent, VkImageType type, VkFormat f
         .imageType = type,
         .format = format,
         .extent = extent,
-        .usage = usage,
         .mipLevels = mipLevels,
         .arrayLayers = type == VK_IMAGE_TYPE_3D ? 1 : type == VK_IMAGE_TYPE_2D ? extent.depth : extent.height,
         .samples = VK_SAMPLE_COUNT_1_BIT,
@@ -414,9 +414,11 @@ VkImageView spock::create_image_view(const spock::Image& image, VkImageViewType 
         .image = image.image,
         .viewType = viewType,
         .format = image.format,
-        .subresourceRange.baseMipLevel = baseMipLevel,
-        .subresourceRange.levelCount = mipLevels,
-        .subresourceRange.baseArrayLayer = baseArrayLayer
+        .subresourceRange = {
+            .baseMipLevel = baseMipLevel,
+            .levelCount = mipLevels,
+            .baseArrayLayer = baseArrayLayer,
+        }
     };
 
     //may need more
