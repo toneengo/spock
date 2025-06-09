@@ -10,7 +10,6 @@
 #include <glm/glm.hpp>
 
 namespace spock {
-    constexpr uint32_t FRAME_OVERLAP = 3;
     inline struct RenderContext {
         bool                        initialised = false;
         VkDevice                    device;
@@ -32,6 +31,7 @@ namespace spock {
             std::vector<spock::Image>images;
             std::vector<VkImageView> views;
             VkExtent2D               extent;
+            uint32_t                 imageCount;
             VkFormat format;
         };
 

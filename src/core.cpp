@@ -15,6 +15,7 @@
 #include "spock/internal.hpp"
 #include "spock/destroy.hpp"
 #include "spock/shader.hpp"
+#include <iostream>
 
 #ifdef DBG
 const bool gEnableValidationLayers = true;
@@ -55,9 +56,15 @@ static void init_device(SDL_Window* window) {
                         .request_validation_layers(gEnableValidationLayers)
                         //.enable_layer("VK_LAYER_KHRONOS_synchronization2")
 #endif
+                        .enable_extension("VK_KHR_wayland_surface")
                         .use_default_debug_messenger()
                         .require_api_version(1, 3, 0)
                         .build();
+
+    if (!inst_ret)
+    {
+        std::cerr << "Failed to create Vulkan Instance. Error: " << inst_ret.error().message() << '\n';
+    }
 
     vkb::Instance vkb_inst = inst_ret.value();
     ctx.instance           = vkb_inst.instance;
@@ -92,14 +99,20 @@ static void init_device(SDL_Window* window) {
     features11.multiview = true;
 
     vkb::PhysicalDeviceSelector selector{vkb_inst};
-    vkb::PhysicalDevice         physical_device = selector
+    auto phys_ret = selector
         .set_minimum_version(1, 3)
         .set_required_features_13(features13)
         .set_required_features_12(features12)
         .set_required_features_11(features11)
         .set_surface(ctx.surface)
-        .select()
-        .value();
+        .select();
+
+    if (!phys_ret)
+    {
+        std::cerr << "Failed to select Vulkan Physical Device. Error: " << phys_ret.error().message() << '\n';
+    }
+    
+    vkb::PhysicalDevice physical_device = phys_ret.value();
 
     vkb::DeviceBuilder device_builder{physical_device};
     vkb::Device        vkb_device = device_builder.build().value();
@@ -119,7 +132,9 @@ static void init_device(SDL_Window* window) {
 
 static void init_swapchain() {
     //initialize swapchain
+    // no way this should change right??
     create_swapchain(ctx.windowExtent.width, ctx.windowExtent.height);
+    ctx.swapchain.imageCount = ctx.swapchain.images.size();
 }
 
 void spock::init(SDL_Window* window)
@@ -559,17 +574,23 @@ void spock::destroy_image_view(VkImageView view)
 void spock::create_swapchain(uint32_t width, uint32_t height) {
     vkb::SwapchainBuilder swapchainBuilder{ctx.physicalDevice, ctx.device, ctx.surface};
     ctx.swapchain.format   = VK_FORMAT_B8G8R8A8_UNORM;
-    vkb::Swapchain vkbSwapchain = swapchainBuilder
+    auto swap_ret = swapchainBuilder
                                       //.use_default_format_selection()
                                       .set_desired_format(VkSurfaceFormatKHR{.format = ctx.swapchain.format, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR})
-                                      .set_required_min_image_count(3)
+                                      .set_desired_min_image_count(3)
                                       //use vsync present mode
                                       .set_desired_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR)
                                       .set_desired_extent(width, height)
                                       .add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
                                       .add_image_usage_flags(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-                                      .build()
-                                      .value();
+                                      .build();
+
+    if (!swap_ret)
+    {
+        std::cerr << "Failed to create swapchain. Error: " << swap_ret.error().message() << '\n';
+    }
+
+    vkb::Swapchain vkbSwapchain = swap_ret.value();
 
     ctx.swapchain.extent = vkbSwapchain.extent;
     //store swapchain and its related images
@@ -580,6 +601,7 @@ void spock::create_swapchain(uint32_t width, uint32_t height) {
 
     ctx.swapchain.images.resize(images.size());
     ctx.swapchain.views.resize(views.size());
+
     for (int i = 0; i < ctx.swapchain.images.size(); i++)
     {
         ctx.swapchain.images[i].image = images[i];
