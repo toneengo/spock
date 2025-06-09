@@ -56,7 +56,6 @@ static void init_device(SDL_Window* window) {
                         .request_validation_layers(gEnableValidationLayers)
                         //.enable_layer("VK_LAYER_KHRONOS_synchronization2")
 #endif
-                        .enable_extension("VK_KHR_wayland_surface")
                         .use_default_debug_messenger()
                         .require_api_version(1, 3, 0)
                         .build();
