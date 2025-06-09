@@ -20,7 +20,7 @@ inline VkImageSubresourceRange image_subresource_range(VkImageAspectFlags aspect
 }
 
 //only use in initialization
-inline void imm_copy_to_buffer(spock::Buffer dstBuffer, void* data, VkDeviceSize size)
+inline void imm_copy_to_buffer(spock::Buffer dstBuffer, const void* data, VkDeviceSize size)
 {
     spock::Buffer staging = spock::create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     vmaCopyMemoryToAllocation(spock::ctx.allocator, data, staging.allocation, 0, size);

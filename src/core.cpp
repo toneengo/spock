@@ -288,8 +288,9 @@ Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, uint32_t
     return buffer;
 }
 
-Buffer spock::create_buffer(void* data, size_t allocSize, VkBufferUsageFlags usage, uint32_t requiredFlags)
+Buffer spock::create_buffer(const void* data, size_t allocSize, VkBufferUsageFlags usage, uint32_t requiredFlags)
 {
+    if (data == nullptr || allocSize == 0) return {};
     Buffer buffer = create_buffer(allocSize, usage, requiredFlags);
     imm_copy_to_buffer(buffer, data, allocSize);
     return buffer;
