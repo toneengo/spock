@@ -20,23 +20,23 @@ inline VkImageSubresourceRange image_subresource_range(VkImageAspectFlags aspect
 }
 
 //only use in initialization
-inline void imm_copy_to_buffer(VkBuffer dstBuffer, void* data, VkDeviceSize size)
+inline void imm_copy_to_buffer(spock::Buffer dstBuffer, void* data, VkDeviceSize size)
 {
-    spock::Buffer staging = spock::create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_ONLY);
-    memcpy(staging.info.pMappedData, data, size);
+    spock::Buffer staging = spock::create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    vmaCopyMemoryToAllocation(spock::ctx.allocator, data, staging.allocation, 0, size);
     spock::begin_immediate_command();
     VkBufferCopy vertexCopy{
         .srcOffset = 0,
         .dstOffset = 0,
-        .size =size 
+        .size = size 
     };
 
-    vkCmdCopyBuffer(immCommandBuffer, staging.buffer, dstBuffer, 1, &vertexCopy);
+    vkCmdCopyBuffer(immCommandBuffer, staging.buffer, dstBuffer.buffer, 1, &vertexCopy);
     spock::end_immediate_command();
     destroy_buffer(staging);
 }
 
-inline void copy_buffer(VkCommandBuffer cmd, VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+inline void copy_buffer(VkCommandBuffer cmd, const spock::Buffer& srcBuffer, spock::Buffer& dstBuffer, VkDeviceSize size)
 {
     if (size == 0) return;
     VkBufferCopy bufferCopy = {
@@ -44,7 +44,7 @@ inline void copy_buffer(VkCommandBuffer cmd, VkBuffer srcBuffer, VkBuffer dstBuf
         .dstOffset = 0,
         .size = size
     };
-    vkCmdCopyBuffer(cmd, srcBuffer, dstBuffer, 1, &bufferCopy);
+    vkCmdCopyBuffer(cmd, srcBuffer.buffer, dstBuffer.buffer, 1, &bufferCopy);
 }
 
 struct BarrierMask {
