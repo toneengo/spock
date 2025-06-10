@@ -175,7 +175,7 @@ void spock::init(SDL_Window* window)
     init_swapchain();
 
     immCommandFence = create_fence(VK_FENCE_CREATE_SIGNALED_BIT);
-    immCommandPool = create_command_pool(ctx.transferQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    immCommandPool = create_command_pool(ctx.graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     immCommandBuffer = create_command_buffer(immCommandPool);
 
     QUEUE_DESTROY_OBJ(immCommandPool);
@@ -295,7 +295,7 @@ void spock::begin_immediate_command() {
 
 void spock::end_immediate_command() {
     VK_CHECK(vkEndCommandBuffer(immCommandBuffer));
-    submit_command_buffer(spock::ctx.transferQueue,
+    submit_command_buffer(spock::ctx.graphicsQueue,
         {immCommandBuffer}, {}, {}, immCommandFence
     );
     VK_CHECK(vkWaitForFences(ctx.device, 1, &immCommandFence, true, 9999999999));

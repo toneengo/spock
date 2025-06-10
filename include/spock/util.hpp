@@ -310,13 +310,7 @@ inline void end_dynamic_rendering(VkCommandBuffer cmd)
 {
     vkCmdEndRendering(cmd);
 }
-#define VK_CHECK(x)                                                     \
-do {                                                                \
-    VkResult err = x;                                               \
-    if (err) {                                                      \
-        printf("Detected Vulkan error: %d\n", err); \
-    }                                                               \
-} while (0)
+#define VK_CHECK(x) x;
 
 inline void log_line(const char* source)
 {
