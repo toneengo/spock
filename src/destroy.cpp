@@ -4,8 +4,10 @@
 
 void spock::Object::destroy() {
 #ifdef DBG
+    /*
     if (lineNumber != -1)
         printf("Destroying object at %s:%d\n", fileName, lineNumber);
+        */
 #endif
     switch (type) {
         case OBJ::Image: vmaDestroyImage(ctx.allocator, image, allocation); break;

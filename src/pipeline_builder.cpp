@@ -199,6 +199,7 @@ VkPipeline GraphicsPipelineBuilder::build() {
         layoutInfo.pPushConstantRanges    = pushConstantRanges.data();
         layoutInfo.pushConstantRangeCount = pushConstantRanges.size();
         VK_CHECK(vkCreatePipelineLayout(spock::ctx.device, &layoutInfo, nullptr, &layout));
+        QUEUE_DESTROY_OBJ(layout);
     }
 
     VkGraphicsPipelineCreateInfo info = {};
@@ -278,7 +279,6 @@ VkPipeline GraphicsPipelineBuilder::build() {
     }
 
     QUEUE_DESTROY_OBJ(pipeline);
-    QUEUE_DESTROY_OBJ(layout);
     return pipeline;
 }
 
@@ -314,6 +314,7 @@ VkPipeline ComputePipelineBuilder::build() {
         layoutInfo.pPushConstantRanges    = pushConstantRanges.data();
         layoutInfo.pushConstantRangeCount = pushConstantRanges.size();
         VK_CHECK(vkCreatePipelineLayout(spock::ctx.device, &layoutInfo, nullptr, &layout));
+        QUEUE_DESTROY_OBJ(layout);
     }
 
     VkPipelineShaderStageCreateInfo stageInfo{};
@@ -332,6 +333,5 @@ VkPipeline ComputePipelineBuilder::build() {
     VK_CHECK(vkCreateComputePipelines(spock::ctx.device, VK_NULL_HANDLE, 1, &computePipelineCreateInfo, nullptr, &pipeline));
 
     QUEUE_DESTROY_OBJ(pipeline);
-    QUEUE_DESTROY_OBJ(layout);
     return pipeline;
 }

@@ -616,6 +616,8 @@ void spock::cleanup() {
     if (!ctx.initialised)
         return;
 
+    ctx.initialised = false;
+
     vkDeviceWaitIdle(ctx.device);
 
     destroyQueue.flush();

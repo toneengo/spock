@@ -51,7 +51,7 @@ namespace spock {
     Image                 create_image(const char* fileName, VkImageUsageFlags usage, uint32_t mipLevels = 1);
     VkImageView           create_image_view(const spock::Image& image, VkImageViewType viewType, VkExtent3D extent, uint32_t baseMipLevel = 0, uint32_t mipLevels = 1, uint32_t baseArrayLayer = 0);
     inline VkImageView    create_image_view(const spock::Image& image, VkImageViewType viewType, VkExtent2D extent, uint32_t baseMipLevel = 0, uint32_t mipLevels = 1, uint32_t baseArrayLayer = 0)
-    { create_image_view(image, viewType, {extent.width, extent.height, 1}, baseMipLevel, mipLevels, baseArrayLayer); }
+    { return create_image_view(image, viewType, {extent.width, extent.height, 1}, baseMipLevel, mipLevels, baseArrayLayer); }
     // global imageview
     spock::Image          create_image_and_view(VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, uint32_t mipLevels = 1);
     inline Image          create_image_and_view(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, uint32_t mipLevels = 1)
