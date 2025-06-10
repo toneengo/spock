@@ -54,6 +54,13 @@ struct BarrierMask {
     VkAccessFlags2        dstAccessMask;
 };
 
+inline void set_undefined(spock::Image& image)
+{
+    image.currentLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image.currentStage = VK_PIPELINE_STAGE_2_NONE;
+    image.currentAccess = VK_PIPELINE_STAGE_2_NONE;
+}
+
 inline void image_barrier(VkCommandBuffer cmd, spock::Image& image, VkImageLayout newLayout,
                           VkPipelineStageFlags2 dstStageMask  = VK_PIPELINE_STAGE_2_NONE,
                           VkAccessFlags2        dstAccessMask = VK_ACCESS_2_NONE) {
