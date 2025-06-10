@@ -301,7 +301,7 @@ void spock::end_immediate_command() {
     VK_CHECK(vkWaitForFences(ctx.device, 1, &immCommandFence, true, 9999999999));
 }
 
-Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, uint32_t requiredFlags) {
+Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags) {
     // allocate buffer
     Buffer buffer;
     buffer.size = allocSize;
@@ -321,7 +321,7 @@ Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, uint32_t
     return buffer;
 }
 
-Buffer spock::create_buffer(const void* data, size_t allocSize, VkBufferUsageFlags usage, uint32_t requiredFlags)
+Buffer spock::create_buffer(const void* data, size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags)
 {
     if (data == nullptr || allocSize == 0) return {};
     Buffer buffer = create_buffer(allocSize, usage, requiredFlags);
