@@ -344,7 +344,7 @@ struct SemaphoreStagePair {
     VkSemaphore semaphore = VK_NULL_HANDLE;
     VkPipelineStageFlags2 stage = VK_PIPELINE_STAGE_2_NONE;
 };
-inline void submit_command_buffer(std::initializer_list<VkCommandBuffer> commandBuffers, std::initializer_list<SemaphoreStagePair> waitSemaphores, std::initializer_list<SemaphoreStagePair> signalSemaphores, VkFence fence)
+inline void submit_command_buffer(VkQueue queue, std::initializer_list<VkCommandBuffer> commandBuffers, std::initializer_list<SemaphoreStagePair> waitSemaphores, std::initializer_list<SemaphoreStagePair> signalSemaphores, VkFence fence)
 {
     //max 16
     static VkCommandBufferSubmitInfo cmds[16];
@@ -397,6 +397,6 @@ inline void submit_command_buffer(std::initializer_list<VkCommandBuffer> command
         .pSignalSemaphoreInfos = signals,
     };
 
-    vkQueueSubmit2(spock::ctx.graphicsQueue, 1, &submit, fence);
+    vkQueueSubmit2(queue, 1, &submit, fence);
 }
 }

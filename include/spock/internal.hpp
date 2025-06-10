@@ -19,6 +19,12 @@ namespace spock {
         VkPhysicalDevice            physicalDevice;
         VkQueue                     graphicsQueue;
         uint32_t                    graphicsQueueFamily;
+
+        VkQueue                     computeQueue;
+        uint32_t                    computeQueueFamily;
+
+        VkQueue                     transferQueue;
+        uint32_t                    transferQueueFamily;
         VmaAllocator                allocator;
 
         SDL_Window*     window;

@@ -118,6 +118,38 @@ static void init_device(SDL_Window* window) {
     ctx.device                    = vkb_device.device;
     ctx.graphicsQueue             = vkb_device.get_queue(vkb::QueueType::graphics).value();
     ctx.graphicsQueueFamily       = vkb_device.get_queue_index(vkb::QueueType::graphics).value();
+
+    auto comp_ret = vkb_device.get_queue(vkb::QueueType::compute);
+    if (!comp_ret)
+    {
+        std::cout << "Failed to get compute queue. Error: " << comp_ret.error().message() << '\n';
+
+        //Fallback to graphics queue
+        ctx.computeQueue             = ctx.graphicsQueue;
+        ctx.computeQueueFamily       = ctx.graphicsQueueFamily;
+    }
+    else
+    {
+        ctx.computeQueue             = comp_ret.value();
+        ctx.computeQueueFamily       = vkb_device.get_queue_index(vkb::QueueType::compute).value();
+    }
+
+    auto tran_ret = vkb_device.get_queue(vkb::QueueType::transfer);
+    if (!tran_ret)
+    {
+        std::cout << "Failed to get transfer queue. Error: " << tran_ret.error().message() << '\n';
+
+        //Fallback to graphics queue
+        ctx.transferQueue             = ctx.graphicsQueue;
+        ctx.transferQueueFamily       = ctx.graphicsQueueFamily;
+    }
+    else
+    {
+        ctx.transferQueue             = tran_ret.value();
+        ctx.transferQueueFamily       = vkb_device.get_queue_index(vkb::QueueType::transfer).value();
+    }
+
+
     ctx.physicalDevice            = physical_device.physical_device;
 
     VmaAllocatorCreateInfo allocatorInfo = {};
@@ -262,7 +294,7 @@ void spock::begin_immediate_command() {
 
 void spock::end_immediate_command() {
     VK_CHECK(vkEndCommandBuffer(immCommandBuffer));
-    submit_command_buffer(
+    submit_command_buffer(spock::ctx.transferQueue,
         {immCommandBuffer}, {}, {}, immCommandFence
     );
     VK_CHECK(vkWaitForFences(ctx.device, 1, &immCommandFence, true, 9999999999));
