@@ -58,7 +58,7 @@ namespace spock {
     { return create_image_and_view({extent.width, extent.height, 1}, format, usage, viewType, mipLevels); }
     void                  destroy_image_view(VkImageView view);
 
-    VkCommandPool         create_command_pool(VkCommandPoolCreateFlags flags);
+    VkCommandPool         create_command_pool(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags);
     VkCommandBuffer       create_command_buffer(VkCommandPool pool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
     VkFence create_fence(VkFenceCreateFlagBits flags = VK_FENCE_CREATE_SIGNALED_BIT);
     VkSemaphore create_semaphore();

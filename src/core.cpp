@@ -1,3 +1,4 @@
+#include <common/TracyQueue.hpp>
 #include <vulkan/vulkan_core.h>
 
 #include <glm/glm.hpp>
@@ -174,7 +175,7 @@ void spock::init(SDL_Window* window)
     init_swapchain();
 
     immCommandFence = create_fence(VK_FENCE_CREATE_SIGNALED_BIT);
-    immCommandPool = create_command_pool(VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    immCommandPool = create_command_pool(ctx.transferQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     immCommandBuffer = create_command_buffer(immCommandPool);
 
     QUEUE_DESTROY_OBJ(immCommandPool);
@@ -542,13 +543,13 @@ spock::Image spock::create_image_and_view(VkExtent3D extent, VkFormat format, Vk
     return image;
 }
 
-VkCommandPool spock::create_command_pool(VkCommandPoolCreateFlags flags)
+VkCommandPool spock::create_command_pool(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags flags)
 {
     VkCommandPoolCreateInfo commandPoolInfo = {};
     commandPoolInfo.sType                   = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     commandPoolInfo.pNext                   = nullptr;
     commandPoolInfo.flags                   = flags;
-    commandPoolInfo.queueFamilyIndex        = spock::ctx.graphicsQueueFamily;
+    commandPoolInfo.queueFamilyIndex        = queueFamilyIndex;
     VkCommandPool pool;
     VK_CHECK(vkCreateCommandPool(spock::ctx.device, &commandPoolInfo, nullptr, &pool));
     return pool;
