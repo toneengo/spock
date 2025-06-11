@@ -301,7 +301,7 @@ void spock::end_immediate_command() {
     VK_CHECK(vkWaitForFences(ctx.device, 1, &immCommandFence, true, 9999999999));
 }
 
-Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags) {
+Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags flags) {
     // allocate buffer
     Buffer buffer;
     buffer.size = allocSize;
@@ -316,15 +316,16 @@ Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VkMemory
 
     VmaAllocationCreateInfo vmaallocInfo = {};
     vmaallocInfo.requiredFlags = requiredFlags;
-    vmaallocInfo.flags                   = VMA_ALLOCATION_CREATE_MAPPED_BIT;
-    VK_CHECK(vmaCreateBuffer(ctx.allocator, &bufferInfo, &vmaallocInfo, &buffer.buffer, &buffer.allocation, &buffer.info));
+    vmaallocInfo.flags         = flags;
+
+    VK_CHECK(vmaCreateBuffer(ctx.allocator, &bufferInfo, &vmaallocInfo, &buffer.buffer, &buffer.allocation, nullptr));
     return buffer;
 }
 
-Buffer spock::create_buffer(const void* data, size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags)
+Buffer spock::create_buffer(const void* data, size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags flags)
 {
     if (data == nullptr || allocSize == 0) return {};
-    Buffer buffer = create_buffer(allocSize, usage, requiredFlags);
+    Buffer buffer = create_buffer(allocSize, usage, requiredFlags, flags);
     imm_copy_to_buffer(buffer, data, allocSize);
     return buffer;
 }
@@ -332,8 +333,7 @@ Buffer spock::create_buffer(const void* data, size_t allocSize, VkBufferUsageFla
 void spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size) {
 
     Buffer uploadbuffer = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    void* data = uploadbuffer.info.pMappedData;
-    memcpy(uploadbuffer.info.pMappedData, src, size);
+    vmaCopyMemoryToAllocation(spock::ctx.allocator, src, uploadbuffer.allocation, 0, size);
     begin_immediate_command();
 
     VkBufferCopy bufferCopy;
@@ -351,7 +351,7 @@ Image spock::create_image(void* data, VkExtent3D extent, VkFormat format, VkImag
     size_t data_size    = extent.depth * extent.width * extent.height * 4;
     Buffer uploadbuffer = create_buffer(data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    memcpy(uploadbuffer.info.pMappedData, data, data_size);
+    vmaCopyMemoryToAllocation(spock::ctx.allocator, data, uploadbuffer.allocation, 0, data_size);
 
     Image new_image = create_image(extent, VK_IMAGE_TYPE_2D, format, usage | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, mipLevels);
     begin_immediate_command();

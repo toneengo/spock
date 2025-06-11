@@ -27,7 +27,6 @@ namespace spock {
     struct Buffer {
         VkBuffer          buffer{};
         VmaAllocation     allocation{};
-        VmaAllocationInfo info{};
         VkDeviceSize      size = 0;
     };
 }

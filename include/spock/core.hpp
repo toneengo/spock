@@ -65,8 +65,8 @@ namespace spock {
 
     void                  destroy_image(Image image);
 
-    Buffer                create_buffer(size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags);
-    Buffer                create_buffer(const void* data, size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags);
+    Buffer                create_buffer(size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags flags = 0);
+    Buffer                create_buffer(const void* data, size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags flags = 0);
 
     // ONLY use for gpu-only buffers at initialisation
     void copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size);
