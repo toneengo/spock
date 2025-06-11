@@ -30,11 +30,6 @@ void spock::DestroyQueue::push(Object obj) {
     queue.push_back(obj);
 }
 
-void spock::DestroyQueue::push_swapchain(Swapchain&& swapchain)
-{
-    swapchainQueue.push_back(std::move(swapchain));
-}
-
 namespace spock {
     void destroy_swapchain(Swapchain& swapchain);
 }
@@ -44,9 +39,5 @@ void spock::DestroyQueue::flush() {
         it->destroy();
     }
 
-    for (auto it = swapchainQueue.rbegin(); it != swapchainQueue.rend(); it++) {
-        spock::destroy_swapchain(*it);
-    }
     queue.clear();
-    swapchainQueue.clear();
 }

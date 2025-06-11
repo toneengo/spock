@@ -72,7 +72,7 @@ namespace spock {
     void                  destroy_buffer(Buffer buffer);
 
     void                  destroy_swapchain(spock::Swapchain& swapchain);
-    spock::Swapchain      create_swapchain(uint32_t width, uint32_t height, VkPresentModeKHR presentMode, VkSwapchainKHR oldSwapchain);
+    void                  create_swapchain(Swapchain& swapchain, uint32_t width, uint32_t height, VkPresentModeKHR presentMode, VkSwapchainKHR oldSwapchain);
 
     void                  begin_immediate_command();
     void                  end_immediate_command();

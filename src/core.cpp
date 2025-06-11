@@ -32,9 +32,6 @@ void spock::destroy_swapchain(Swapchain& swapchain) {
     for (const auto& v : swapchain.views) {
         vkDestroyImageView(ctx.device, v, nullptr);
     }
-    for (const auto& s : swapchain.semaphores) {
-        vkDestroySemaphore(ctx.device, s, nullptr);
-    }
 
     swapchain.images.clear();
     swapchain.views.clear();
@@ -589,10 +586,9 @@ void spock::destroy_image_view(VkImageView view)
     vkDestroyImageView(ctx.device, view, nullptr);
 }
 
-spock::Swapchain spock::create_swapchain(uint32_t width, uint32_t height, VkPresentModeKHR presentMode, VkSwapchainKHR oldSwapchain) {
+void spock::create_swapchain(spock::Swapchain& swapchain, uint32_t width, uint32_t height, VkPresentModeKHR presentMode, VkSwapchainKHR oldSwapchain) {
     vkb::SwapchainBuilder swapchainBuilder{ctx.physicalDevice, ctx.device, ctx.surface};
 
-    Swapchain swapchain;
     swapchain.format   = VK_FORMAT_B8G8R8A8_UNORM;
 
     if (oldSwapchain != VK_NULL_HANDLE)
@@ -635,9 +631,8 @@ spock::Swapchain spock::create_swapchain(uint32_t width, uint32_t height, VkPres
         swapchain.images[i].format = swapchain.format;
         swapchain.images[i].currentStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
         swapchain.images[i].currentAccess = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
-        swapchain.semaphores[i] = create_semaphore();
+        if (swapchain.semaphores[i] == VK_NULL_HANDLE) swapchain.semaphores[i] = create_semaphore();
     }
-    return std::move(swapchain);
 }
 
 void spock::cleanup() {

@@ -61,11 +61,9 @@ namespace spock {
       public:
         void flush();
         void push(Object _o);
-        void push_swapchain(Swapchain&& swapchain);
 
       private:
         std::vector<Object> queue;
-        std::vector<Swapchain> swapchainQueue;
     };
 
 }
