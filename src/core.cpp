@@ -31,6 +31,9 @@ void spock::destroy_swapchain() {
     for (const auto& v : ctx.swapchain.views) {
         vkDestroyImageView(ctx.device, v, nullptr);
     }
+    for (const auto& s : ctx.swapchain.semaphores) {
+        vkDestroySemaphore(ctx.device, s, nullptr);
+    }
 
     ctx.swapchain.images.clear();
 }
@@ -163,10 +166,7 @@ static void init_device(SDL_Window* window) {
 }
 
 static void init_swapchain() {
-    //initialize swapchain
-    // no way this should change right??
     create_swapchain(ctx.windowExtent.width, ctx.windowExtent.height);
-    ctx.swapchain.imageCount = ctx.swapchain.images.size();
 }
 
 void spock::init(SDL_Window* window)
@@ -633,7 +633,8 @@ void spock::create_swapchain(uint32_t width, uint32_t height) {
     auto images = vkbSwapchain.get_images().value();
 
     ctx.swapchain.images.resize(images.size());
-    ctx.swapchain.views.resize(views.size());
+    ctx.swapchain.views.resize(images.size());
+    ctx.swapchain.semaphores.resize(images.size());
 
     for (int i = 0; i < ctx.swapchain.images.size(); i++)
     {
@@ -642,6 +643,7 @@ void spock::create_swapchain(uint32_t width, uint32_t height) {
         ctx.swapchain.images[i].format = ctx.swapchain.format;
         ctx.swapchain.images[i].currentStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
         ctx.swapchain.images[i].currentAccess = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+        ctx.swapchain.semaphores[i] = create_semaphore();
     }
 }
 
