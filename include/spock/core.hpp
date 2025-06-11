@@ -40,7 +40,6 @@ namespace spock {
     void                  write_descriptor_sets(std::initializer_list<ImageWrite> imageWrites, std::initializer_list<BufferWrite> bufferWrites);
 
     void                  init(SDL_Window* window);
-    void                  process_SDL_event(const SDL_Event& event);
     
     void                  cleanup();
     VkDescriptorSetLayout create_descriptor_set_layout(std::initializer_list<Binding> _bindings, VkShaderStageFlags shaderStages, VkDescriptorSetLayoutCreateFlags flags = 0);
@@ -72,8 +71,8 @@ namespace spock {
     void copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size);
     void                  destroy_buffer(Buffer buffer);
 
-    void                  destroy_swapchain();
-    void                  create_swapchain(uint32_t width, uint32_t height);
+    void                  destroy_swapchain(spock::Swapchain& swapchain);
+    spock::Swapchain      create_swapchain(uint32_t width, uint32_t height, VkPresentModeKHR presentMode, VkSwapchainKHR oldSwapchain);
 
     void                  begin_immediate_command();
     void                  end_immediate_command();

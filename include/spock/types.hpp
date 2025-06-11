@@ -29,4 +29,14 @@ namespace spock {
         VmaAllocation     allocation{};
         VkDeviceSize      size = 0;
     };
+
+    struct Swapchain {
+        VkSwapchainKHR           swapchain;
+        std::vector<spock::Image>images;
+        std::vector<VkImageView> views;
+        std::vector<VkSemaphore> semaphores;
+        VkExtent2D               extent;
+        uint32_t                 imageCount;
+        VkFormat format;
+    };
 }

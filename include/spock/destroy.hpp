@@ -18,6 +18,7 @@ namespace spock {
             CommandPool,
             Buffer,
             Sampler,
+            Semaphore,
         };
 
         union {
@@ -31,6 +32,7 @@ namespace spock {
             VkCommandPool         commandPool;
             VkBuffer              buffer;
             VkSampler             sampler;
+            VkSemaphore           semaphore;
         };
         VmaAllocation allocation;
         OBJ           type;
@@ -50,6 +52,7 @@ namespace spock {
         Object(VkCommandPool _commandPool) : commandPool(_commandPool), type(OBJ::CommandPool) {}
         Object(spock::Buffer _buffer) : buffer(_buffer.buffer), allocation(_buffer.allocation), type(OBJ::Buffer) {}
         Object(VkSampler _sampler) : sampler(_sampler), type(OBJ::Sampler) {}
+        Object(VkSemaphore _semaphore) : semaphore(_semaphore), type(OBJ::Semaphore) {}
 
         void destroy();
     };
@@ -58,9 +61,11 @@ namespace spock {
       public:
         void flush();
         void push(Object _o);
+        void push_swapchain(Swapchain&& swapchain);
 
       private:
         std::vector<Object> queue;
+        std::vector<Swapchain> swapchainQueue;
     };
 
 }

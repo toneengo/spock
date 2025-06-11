@@ -228,6 +228,10 @@ inline void           set_viewport(const VkCommandBuffer& cmd, float x, float y,
     vkCmdSetViewport(cmd, 0, 1, &viewport);
 } 
 
+inline void set_scissor(const VkCommandBuffer& cmd, VkRect2D rect)
+{
+    vkCmdSetScissor(cmd, 0, 1, &rect);
+}
 inline void set_scissor(const VkCommandBuffer& cmd, float x, float y, float width, float height)
 {
     VkRect2D scissor      = {};

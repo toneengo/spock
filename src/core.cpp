@@ -3,6 +3,7 @@
 
 #include <glm/glm.hpp>
 
+#include "spock/types.hpp"
 #include "vk_mem_alloc.h"
 
 #include "VkBootstrap.h"
@@ -26,29 +27,18 @@ const bool gEnableValidationLayers = false;
 
 using namespace spock;
 
-void spock::destroy_swapchain() {
-    vkDestroySwapchainKHR(ctx.device, ctx.swapchain.swapchain, nullptr);
-    for (const auto& v : ctx.swapchain.views) {
+void spock::destroy_swapchain(Swapchain& swapchain) {
+    vkDestroySwapchainKHR(ctx.device, swapchain.swapchain, nullptr);
+    for (const auto& v : swapchain.views) {
         vkDestroyImageView(ctx.device, v, nullptr);
     }
-    for (const auto& s : ctx.swapchain.semaphores) {
+    for (const auto& s : swapchain.semaphores) {
         vkDestroySemaphore(ctx.device, s, nullptr);
     }
 
-    ctx.swapchain.images.clear();
-}
-
-void spock::process_SDL_event(const SDL_Event& event)
-{
-    switch (event.type)
-    {
-        case SDL_EVENT_WINDOW_RESIZED:
-            destroy_swapchain();
-            create_swapchain(event.window.data1, event.window.data2);
-            break;
-        default:
-            break;
-    }
+    swapchain.images.clear();
+    swapchain.views.clear();
+    swapchain.semaphores.clear();
 }
 
 static void init_device(SDL_Window* window) {
@@ -165,14 +155,9 @@ static void init_device(SDL_Window* window) {
     QUEUE_DESTROY_OBJ(ctx.allocator);
 }
 
-static void init_swapchain() {
-    create_swapchain(ctx.windowExtent.width, ctx.windowExtent.height);
-}
-
 void spock::init(SDL_Window* window)
 {
     init_device(window);
-    init_swapchain();
 
     immCommandFence = create_fence(VK_FENCE_CREATE_SIGNALED_BIT);
     immCommandPool = create_command_pool(ctx.graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -604,15 +589,21 @@ void spock::destroy_image_view(VkImageView view)
     vkDestroyImageView(ctx.device, view, nullptr);
 }
 
-void spock::create_swapchain(uint32_t width, uint32_t height) {
+spock::Swapchain spock::create_swapchain(uint32_t width, uint32_t height, VkPresentModeKHR presentMode, VkSwapchainKHR oldSwapchain) {
     vkb::SwapchainBuilder swapchainBuilder{ctx.physicalDevice, ctx.device, ctx.surface};
-    ctx.swapchain.format   = VK_FORMAT_B8G8R8A8_UNORM;
+
+    Swapchain swapchain;
+    swapchain.format   = VK_FORMAT_B8G8R8A8_UNORM;
+
+    if (oldSwapchain != VK_NULL_HANDLE)
+        swapchainBuilder.set_old_swapchain(oldSwapchain);
+
     auto swap_ret = swapchainBuilder
                                       //.use_default_format_selection()
-                                      .set_desired_format(VkSurfaceFormatKHR{.format = ctx.swapchain.format, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR})
+                                      .set_desired_format(VkSurfaceFormatKHR{.format = swapchain.format, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR})
                                       .set_desired_min_image_count(3)
                                       //use vsync present mode
-                                      .set_desired_present_mode(VK_PRESENT_MODE_IMMEDIATE_KHR)
+                                      .set_desired_present_mode(presentMode)
                                       .set_desired_extent(width, height)
                                       .add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
                                       .add_image_usage_flags(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
@@ -625,26 +616,28 @@ void spock::create_swapchain(uint32_t width, uint32_t height) {
 
     vkb::Swapchain vkbSwapchain = swap_ret.value();
 
-    ctx.swapchain.extent = vkbSwapchain.extent;
+    swapchain.extent = vkbSwapchain.extent;
     //store swapchain and its related images
-    ctx.swapchain.swapchain = vkbSwapchain.swapchain;
+    swapchain.swapchain = vkbSwapchain.swapchain;
 
     auto views = vkbSwapchain.get_image_views().value();
     auto images = vkbSwapchain.get_images().value();
 
-    ctx.swapchain.images.resize(images.size());
-    ctx.swapchain.views.resize(images.size());
-    ctx.swapchain.semaphores.resize(images.size());
+    swapchain.images.resize(images.size());
+    swapchain.views.resize(images.size());
+    swapchain.semaphores.resize(images.size());
 
-    for (int i = 0; i < ctx.swapchain.images.size(); i++)
+    for (int i = 0; i < swapchain.images.size(); i++)
     {
-        ctx.swapchain.images[i].image = images[i];
-        ctx.swapchain.views[i] = views[i];
-        ctx.swapchain.images[i].format = ctx.swapchain.format;
-        ctx.swapchain.images[i].currentStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-        ctx.swapchain.images[i].currentAccess = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
-        ctx.swapchain.semaphores[i] = create_semaphore();
+        swapchain.images[i].image = images[i];
+        swapchain.images[i].extent = {swapchain.extent.width, swapchain.extent.height, 1};
+        swapchain.views[i] = views[i];
+        swapchain.images[i].format = swapchain.format;
+        swapchain.images[i].currentStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        swapchain.images[i].currentAccess = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+        swapchain.semaphores[i] = create_semaphore();
     }
+    return std::move(swapchain);
 }
 
 void spock::cleanup() {
@@ -656,8 +649,6 @@ void spock::cleanup() {
     vkDeviceWaitIdle(ctx.device);
 
     destroyQueue.flush();
-
-    destroy_swapchain();
 
     vkDestroySurfaceKHR(ctx.instance, ctx.surface, nullptr);
     vkDestroyDevice(ctx.device, nullptr);

@@ -21,6 +21,7 @@ void spock::Object::destroy() {
         case OBJ::CommandPool: vkDestroyCommandPool(ctx.device, commandPool, nullptr); break;
         case OBJ::Buffer: vmaDestroyBuffer(ctx.allocator, buffer, allocation); break;
         case OBJ::Sampler: vkDestroySampler(ctx.device, sampler, nullptr); break;
+        case OBJ::Semaphore: vkDestroySemaphore(ctx.device, semaphore, nullptr); break;
         default: break;
     }
 }
@@ -29,9 +30,23 @@ void spock::DestroyQueue::push(Object obj) {
     queue.push_back(obj);
 }
 
+void spock::DestroyQueue::push_swapchain(Swapchain&& swapchain)
+{
+    swapchainQueue.push_back(std::move(swapchain));
+}
+
+namespace spock {
+    void destroy_swapchain(Swapchain& swapchain);
+}
+
 void spock::DestroyQueue::flush() {
     for (auto it = queue.rbegin(); it != queue.rend(); it++) {
         it->destroy();
     }
+
+    for (auto it = swapchainQueue.rbegin(); it != swapchainQueue.rend(); it++) {
+        spock::destroy_swapchain(*it);
+    }
     queue.clear();
+    swapchainQueue.clear();
 }

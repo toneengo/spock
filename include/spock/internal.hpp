@@ -28,29 +28,7 @@ namespace spock {
         VmaAllocator                allocator;
 
         SDL_Window*     window;
-        VkExtent2D      windowExtent = {800, 600};
-        VkExtent3D      screenExtent; //desktop resolution
-        glm::vec2       renderScale = {1.f, 1.f};
 
-        struct Swapchain {
-            VkSwapchainKHR           swapchain;
-            std::vector<spock::Image>images;
-            std::vector<VkImageView> views;
-            std::vector<VkSemaphore> semaphores;
-            VkExtent2D               extent;
-            uint32_t                 imageCount;
-            VkFormat format;
-        };
-
-        //settable by the "user"
-        /*
-        VkDescriptorSet textureDescriptorSet = VK_NULL_HANDLE;
-        VkSampler currentSampler = VK_NULL_HANDLE;
-        uint32_t textureDescriptorSetBinding = 0;
-        uint32_t textureCount = 0;
-        */
-
-        Swapchain            swapchain;
         spock::DestroyQueue destroyQueue;
     } ctx;
 
