@@ -7,7 +7,7 @@ void spock::Object::destroy() {
     /*
     if (lineNumber != -1)
         printf("Destroying object at %s:%d\n", fileName, lineNumber);
-        */
+    */
 #endif
     switch (type) {
         case OBJ::Image: vmaDestroyImage(ctx.allocator, image, allocation); break;
@@ -30,8 +30,19 @@ void spock::DestroyQueue::push(Object obj) {
     queue.push_back(obj);
 }
 
-namespace spock {
-    void destroy_swapchain(Swapchain& swapchain);
+void spock::DestroyQueue::push(spock::Image _im)
+{
+    Object o;
+    o.type = Object::OBJ::Image;
+    o.image = _im.image;
+    o.allocation = _im.allocation;
+    queue.push_back(o);
+    if (_im.view != VK_NULL_HANDLE)
+    {
+        o.type = Object::OBJ::ImageView;
+        o.imageView = _im.view;
+        queue.push_back(o);
+    }
 }
 
 void spock::DestroyQueue::flush() {

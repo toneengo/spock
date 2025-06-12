@@ -188,11 +188,10 @@ VkDescriptorSetLayout spock::create_descriptor_set_layout(std::initializer_list<
     info.bindingCount                    = bindings.size();
     info.flags                           = flags;
 
-    VkDescriptorSetLayout set;
-    VK_CHECK(vkCreateDescriptorSetLayout(ctx.device, &info, nullptr, &set));
-    QUEUE_DESTROY_OBJ(set);
+    VkDescriptorSetLayout layout;
+    VK_CHECK(vkCreateDescriptorSetLayout(ctx.device, &info, nullptr, &layout));
 
-    return set;
+    return layout;
 }
 
 VkPipelineLayout      spock::create_pipeline_layout(std::initializer_list<VkDescriptorSetLayout> dsLayouts, std::initializer_list<VkPushConstantRange> psRanges)
@@ -558,7 +557,6 @@ VkFence spock::create_fence(VkFenceCreateFlagBits flags)
     info.flags             = flags;
     VkFence fence;
     VK_CHECK(vkCreateFence(spock::ctx.device, &info, nullptr, &fence));
-
     return fence;
 }
 
@@ -631,7 +629,11 @@ void spock::create_swapchain(spock::Swapchain& swapchain, uint32_t width, uint32
         swapchain.images[i].format = swapchain.format;
         swapchain.images[i].currentStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
         swapchain.images[i].currentAccess = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
-        if (swapchain.semaphores[i] == VK_NULL_HANDLE) swapchain.semaphores[i] = create_semaphore();
+        if (swapchain.semaphores[i] == VK_NULL_HANDLE)
+        {
+            swapchain.semaphores[i] = create_semaphore();
+            QUEUE_DESTROY_OBJ(swapchain.semaphores[i]);
+        }
     }
 }
 
@@ -643,7 +645,7 @@ void spock::cleanup() {
 
     vkDeviceWaitIdle(ctx.device);
 
-    destroyQueue.flush();
+    ctx.destroyQueue.flush();
 
     vkDestroySurfaceKHR(ctx.instance, ctx.surface, nullptr);
     vkDestroyDevice(ctx.device, nullptr);

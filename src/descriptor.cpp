@@ -4,8 +4,9 @@
 
 using namespace spock;
 
-void DescriptorAllocator::init(std::initializer_list<DescriptorAllocator::PoolSizeRatio> _ratios, uint32_t maxSets) {
+void DescriptorAllocator::init(std::initializer_list<DescriptorAllocator::PoolSizeRatio> _ratios, uint32_t maxSets, VkDescriptorPoolCreateFlags _flags) {
     ratios      = _ratios;
+    flags = _flags;
     setsPerPool = maxSets; //grow it next allocation
     pools.push_back(create_pool());
     initialised = true;
@@ -26,6 +27,8 @@ VkDescriptorPool DescriptorAllocator::create_pool() {
 
     VkDescriptorPool pool;
     vkCreateDescriptorPool(ctx.device, &pool_info, nullptr, &pool);
+
+    QUEUE_DESTROY_OBJ(pool);
     return pool;
 }
 
@@ -41,10 +44,6 @@ void DescriptorAllocator::destroy_pools() {
         vkDestroyDescriptorPool(ctx.device, p, nullptr);
     }
     currentPool = 0;
-}
-
-void DescriptorAllocator::set_flags(VkDescriptorPoolCreateFlags _flags) {
-    flags = _flags;
 }
 
 VkDescriptorSet DescriptorAllocator::allocate(VkDescriptorSetLayout layout) {

@@ -32,15 +32,12 @@ namespace spock {
         spock::DestroyQueue destroyQueue;
     } ctx;
 
-    inline DestroyQueue destroyQueue;
-
 #ifdef DBG
 #define QUEUE_DESTROY_OBJ(x)                                                                                                                                                       \
     do {                                                                                                                                                                           \
-        spock::Object o(x);                                                                                                                                                       \
-        o.lineNumber = __LINE__;                                                                                                                                                   \
-        o.fileName   = __FILE__;                                                                                                                                                   \
-        spock::destroyQueue.push(o);                                                                                                                                              \
+        spock::ctx.destroyQueue.push(x);                                                                                                                                              \
+        spock::ctx.destroyQueue.queue.back().lineNumber = __LINE__;                                                                                                                                                   \
+        spock::ctx.destroyQueue.queue.back().fileName   = __FILE__;                                                                                                                                                   \
     } while (0);
 #else
 #define QUEUE_DESTROY_OBJ(x) spock::destroyQueue.push(x);

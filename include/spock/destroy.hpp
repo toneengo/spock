@@ -41,7 +41,7 @@ namespace spock {
         const char* fileName;
 #endif
         Object() : type(OBJ::None) {}
-        Object(spock::Image _im) : image(_im.image), allocation(_im.allocation), type(OBJ::Image) {}
+        //Object(spock::Image _im) : image(_im.image), allocation(_im.allocation), type(OBJ::Image) {}
         Object(VkImageView _imV) : imageView(_imV), type(OBJ::ImageView) {}
         Object(VmaAllocator _allocator) : type(OBJ::Allocator) {}
         Object(VkDescriptorPool _dp) : dp(_dp), type(OBJ::DescriptorPool) {}
@@ -61,9 +61,10 @@ namespace spock {
       public:
         void flush();
         void push(Object _o);
+        void push(spock::Image _im);
+        std::vector<Object> queue;
 
       private:
-        std::vector<Object> queue;
     };
 
 }
