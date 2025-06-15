@@ -40,7 +40,7 @@ namespace spock {
         spock::ctx.destroyQueue.queue.back().fileName   = __FILE__;                                                                                                                                                   \
     } while (0);
 #else
-#define QUEUE_DESTROY_OBJ(x) spock::destroyQueue.push(x);
+#define QUEUE_DESTROY_OBJ(x) spock::ctx.destroyQueue.push(x);
 #endif
 
 }
