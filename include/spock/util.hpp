@@ -148,7 +148,7 @@ inline void buffer_barrier(VkCommandBuffer cmd, VkBuffer buffer, VkDeviceSize of
     vkCmdPipelineBarrier2(cmd, &depInfo);
 }
 
-inline void clear_image(VkCommandBuffer cmd, VkImage image, VkImageLayout layout, VkClearColorValue color) {
+inline void clear_image(VkCommandBuffer cmd, spock::Image& image, VkClearColorValue color) {
     VkImageSubresourceRange subImage{};
     subImage.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
     subImage.baseMipLevel   = 0;
@@ -156,7 +156,10 @@ inline void clear_image(VkCommandBuffer cmd, VkImage image, VkImageLayout layout
     subImage.baseArrayLayer = 0;
     subImage.layerCount     = VK_REMAINING_ARRAY_LAYERS;
 
-    vkCmdClearColorImage(cmd, image, layout, &color, 1, &subImage);
+    image_barrier(cmd, image, VK_IMAGE_LAYOUT_GENERAL,
+                  VK_PIPELINE_STAGE_2_CLEAR_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
+
+    vkCmdClearColorImage(cmd, image.image, VK_IMAGE_LAYOUT_GENERAL, &color, 1, &subImage);
 }
 inline void begin_command_buffer(VkCommandBuffer cmd, VkCommandBufferUsageFlagBits flags) {
     VkCommandBufferBeginInfo info = {};
