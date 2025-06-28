@@ -31,8 +31,8 @@ namespace spock {
         uint32_t         binding;
         VkDescriptorType descriptorType;
         VkBuffer         buffer;
-        VkDeviceSize     offset;
-        VkDeviceSize     range;
+        VkDeviceSize     offset = 0;
+        VkDeviceSize     range = VK_WHOLE_SIZE;
         uint32_t         index = 0;
         uint32_t         count = 1;
     };
