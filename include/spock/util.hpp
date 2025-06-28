@@ -264,8 +264,8 @@ inline void begin_dynamic_rendering(VkCommandBuffer cmd, VkExtent2D extent, std:
     //max 16 color attachments
     assert(color.size() < 16);
     static VkRenderingAttachmentInfo colorAttachments[16];
-    VkRenderingAttachmentInfo depthAttachment = {};
-    VkRenderingAttachmentInfo stencilAttachment = {};
+    VkRenderingAttachmentInfo depthAttachment = {.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
+    VkRenderingAttachmentInfo stencilAttachment = {.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO};
     int i = 0;
     for (auto& c : color)
     {
@@ -315,8 +315,8 @@ inline void begin_dynamic_rendering(VkCommandBuffer cmd, VkExtent2D extent, std:
     renderingInfo.viewMask             = 0;
     renderingInfo.colorAttachmentCount = i;
     renderingInfo.pColorAttachments    = i == 0 ? nullptr : colorAttachments;
-    renderingInfo.pDepthAttachment     = depth.imageView == VK_NULL_HANDLE ? nullptr : &depthAttachment;
-    renderingInfo.pStencilAttachment   = stencil.imageView == VK_NULL_HANDLE ? nullptr : &stencilAttachment;
+    renderingInfo.pDepthAttachment     = &depthAttachment;
+    renderingInfo.pStencilAttachment   = &stencilAttachment;
     vkCmdBeginRendering(cmd, &renderingInfo);
 }
 
