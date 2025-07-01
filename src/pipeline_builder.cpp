@@ -25,6 +25,7 @@ VkPipelineColorBlendAttachmentState color_blend() {
 }
 
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_descriptor_set_layouts(std::initializer_list<VkDescriptorSetLayout> dsLayouts) {
+    layout = VK_NULL_HANDLE;
     descriptorSetLayouts = dsLayouts;
     return *this;
 }
@@ -62,6 +63,7 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_view_mask(uint32_t _viewMa
 }
 
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_shader_stages(std::initializer_list<ShaderStage> shaderStages) {
+    stages.clear();
     for (const auto& stage : shaderStages) {
         VkPipelineShaderStageCreateInfo info{};
         info.sType               = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
