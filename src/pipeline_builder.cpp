@@ -181,6 +181,10 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_depth_state(VkCompareOp co
     return *this;
 }
 
+GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_depth_state() {
+    depthStencilState = _pipeline_depth_stencil_state_create_info(false, false, VK_COMPARE_OP_NEVER, false, false, {}, {}, 0.0, 1.0);
+    return *this;
+}
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_depth_state(VkCompareOp compareOp, bool writeable, float minDepthBounds, float maxDepthBounds) {
     depthStencilState = _pipeline_depth_stencil_state_create_info(true, writeable, compareOp, true, false, {}, {}, minDepthBounds, maxDepthBounds);
     return *this;

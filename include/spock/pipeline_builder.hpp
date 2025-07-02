@@ -89,6 +89,7 @@ struct GraphicsPipelineBuilder {
     GraphicsPipelineBuilder& set_depth_stencil_state(VkCompareOp compareOp, bool writeable, VkStencilOpState front, VkStencilOpState back);
     GraphicsPipelineBuilder& set_stencil_state(VkStencilOpState front, VkStencilOpState back);
     GraphicsPipelineBuilder& set_depth_state(VkCompareOp compareOp, bool writeable);
+    GraphicsPipelineBuilder& set_depth_state();
     GraphicsPipelineBuilder& set_depth_state(VkCompareOp compareOp, bool writeable, float minDepthBounds, float maxDepthBounds);
     GraphicsPipelineBuilder& set_rendering(VkCompareOp compareOp, bool writeable, float minDepthBounds, float maxDepthBounds);
     GraphicsPipelineBuilder& set_dynamic_states(std::initializer_list<VkDynamicState> states);

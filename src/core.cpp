@@ -89,6 +89,9 @@ static void init_device(SDL_Window* window) {
     features11.multiview = true;
 
     VkPhysicalDeviceFeatures features10{};
+#ifdef DBG
+    features10.robustBufferAccess = true;
+#endif
     features10.multiDrawIndirect = true;
     features10.independentBlend = true;
     vkb::PhysicalDeviceSelector selector{vkb_inst};
