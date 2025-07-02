@@ -37,6 +37,7 @@ GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_pipeline_layout(VkPipeline
 }
 
 GraphicsPipelineBuilder& GraphicsPipelineBuilder::set_push_constant_ranges(std::initializer_list<VkPushConstantRange> ranges) {
+    layout = VK_NULL_HANDLE;
     pushConstantRanges = ranges;
     return *this;
 }
@@ -238,9 +239,15 @@ VkPipeline GraphicsPipelineBuilder::build() {
     for (auto& state : dynamicStates)
     {
         if (state == VK_DYNAMIC_STATE_VIEWPORT)
-            assert(viewportState.pViewports == nullptr);
+        {
+            viewportState.viewportCount = 1;
+            viewportState.pViewports = nullptr;
+        }
         if (state == VK_DYNAMIC_STATE_SCISSOR)
-            assert(viewportState.pScissors == nullptr);
+        {
+            viewportState.scissorCount = 1;
+            viewportState.pScissors = nullptr;
+        }
     }
 
     info.pViewportState                    = &viewportState;
@@ -294,6 +301,7 @@ ComputePipelineBuilder& ComputePipelineBuilder::set_shader_module(VkShaderModule
 }
 
 ComputePipelineBuilder& ComputePipelineBuilder::set_descriptor_set_layouts(std::initializer_list<VkDescriptorSetLayout> dsLayouts) {
+    layout = VK_NULL_HANDLE;
     descriptorSetLayouts = dsLayouts;
     return *this;
 }
@@ -305,6 +313,7 @@ ComputePipelineBuilder& ComputePipelineBuilder::set_pipeline_layout(VkPipelineLa
 }
 
 ComputePipelineBuilder& ComputePipelineBuilder::set_push_constant_ranges(std::initializer_list<VkPushConstantRange> ranges) {
+    layout = VK_NULL_HANDLE;
     pushConstantRanges = ranges;
     return *this;
 }
