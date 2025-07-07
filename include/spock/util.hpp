@@ -173,7 +173,7 @@ inline void blit(VkCommandBuffer cmd, spock::Image& src, spock::Image& dst, VkRe
     image_barrier(cmd, src, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                   VK_PIPELINE_STAGE_2_BLIT_BIT, VK_ACCESS_2_TRANSFER_READ_BIT);
     image_barrier(cmd, dst, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                  VK_PIPELINE_STAGE_2_BLIT_BIT, VK_ACCESS_2_TRANSFER_READ_BIT);
+                  VK_PIPELINE_STAGE_2_BLIT_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT);
 
     blitRegion.srcOffsets[0].x = srcRect.offset.x;
     blitRegion.srcOffsets[0].y = srcRect.offset.y;
