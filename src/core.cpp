@@ -94,6 +94,9 @@ static void init_device(SDL_Window* window) {
 #endif
     features10.multiDrawIndirect = true;
     features10.independentBlend = true;
+#ifndef __APPLE__
+    features10.geometryShader = true;
+#endif
     vkb::PhysicalDeviceSelector selector{vkb_inst};
     auto phys_ret = selector
         .set_minimum_version(1, 3)
