@@ -19,6 +19,7 @@ namespace spock {
             Buffer,
             Sampler,
             Semaphore,
+            DescriptorSet,
         };
 
         union {
@@ -33,7 +34,9 @@ namespace spock {
             VkBuffer              buffer;
             VkSampler             sampler;
             VkSemaphore           semaphore;
+            VkDescriptorSet       ds;
         };
+        VkDescriptorPool descriptorPool;
         VmaAllocation allocation;
         OBJ           type;
 #ifdef DBG
@@ -53,6 +56,7 @@ namespace spock {
         Object(spock::Buffer _buffer) : buffer(_buffer.buffer), allocation(_buffer.allocation), type(OBJ::Buffer) {}
         Object(VkSampler _sampler) : sampler(_sampler), type(OBJ::Sampler) {}
         Object(VkSemaphore _semaphore) : semaphore(_semaphore), type(OBJ::Semaphore) {}
+        Object(VkDescriptorSet _ds, VkDescriptorPool _pool) : ds(_ds), descriptorPool(_pool), type(OBJ::DescriptorSet) {}
 
         void destroy();
     };

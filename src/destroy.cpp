@@ -1,6 +1,7 @@
 #include "spock/destroy.hpp"
 #include "spock/internal.hpp"
 #include <cstdio>
+#include <vulkan/vulkan_core.h>
 
 void spock::Object::destroy() {
 #ifdef DBG
@@ -22,6 +23,7 @@ void spock::Object::destroy() {
         case OBJ::Buffer: vmaDestroyBuffer(ctx.allocator, buffer, allocation); break;
         case OBJ::Sampler: vkDestroySampler(ctx.device, sampler, nullptr); break;
         case OBJ::Semaphore: vkDestroySemaphore(ctx.device, semaphore, nullptr); break;
+        case OBJ::DescriptorSet: vkFreeDescriptorSets(ctx.device, descriptorPool, 1, &ds); break;
         default: break;
     }
 }

@@ -1,6 +1,7 @@
 #include "spock/descriptor.hpp"
 #include "spock/internal.hpp"
 #include "spock/util.hpp"
+#include <vulkan/vulkan_core.h>
 
 using namespace spock;
 
@@ -68,4 +69,9 @@ VkDescriptorSet DescriptorAllocator::allocate(VkDescriptorSetLayout layout) {
         VK_CHECK(vkAllocateDescriptorSets(ctx.device, &allocInfo, &ds));
     }
     return ds;
+}
+
+VkDescriptorPool DescriptorAllocator::get_current_pool()
+{
+    return pools[currentPool];
 }

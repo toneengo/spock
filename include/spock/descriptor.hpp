@@ -21,5 +21,6 @@ namespace spock {
         void                          clear_pools();
         void                          destroy_pools();
         VkDescriptorSet               allocate(VkDescriptorSetLayout layout);
+        VkDescriptorPool              get_current_pool();
     };
 }
