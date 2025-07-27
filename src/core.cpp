@@ -27,9 +27,11 @@ const bool gEnableValidationLayers = false;
 
 using namespace spock;
 
-void spock::destroy_swapchain(Swapchain& swapchain) {
+void spock::destroy_swapchain(Swapchain& swapchain)
+{
     vkDestroySwapchainKHR(ctx.device, swapchain.swapchain, nullptr);
-    for (const auto& v : swapchain.views) {
+    for (const auto& v : swapchain.views)
+    {
         vkDestroyImageView(ctx.device, v, nullptr);
     }
 
@@ -38,14 +40,16 @@ void spock::destroy_swapchain(Swapchain& swapchain) {
     swapchain.semaphores.clear();
 }
 
-static void init_device(SDL_Window* window) {
+static void init_device(SDL_Window* window)
+{
     ctx.window = window;
 
     vkb::InstanceBuilder builder;
-    auto                 inst_ret = builder.set_app_name("vulkan app")
+    auto                 inst_ret = builder
+                        .set_app_name("vulkan app")
 #ifdef DBG
                         .request_validation_layers(gEnableValidationLayers)
-                        //.enable_layer("VK_LAYER_KHRONOS_synchronization2")
+    //.enable_layer("VK_LAYER_KHRONOS_synchronization2")
 #endif
                         .use_default_debug_messenger()
                         .require_api_version(1, 3, 0)
@@ -67,13 +71,14 @@ static void init_device(SDL_Window* window) {
 
     //vulkan 1.3 features
     VkPhysicalDeviceVulkan13Features features13{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES};
-    features13.dynamicRendering = true;
-    features13.synchronization2 = true;
+    features13.dynamicRendering               = true;
+    features13.synchronization2               = true;
+    features13.shaderDemoteToHelperInvocation = true;
     //vulkan 1.2 features
     VkPhysicalDeviceVulkan12Features features12{.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES};
     features12.bufferDeviceAddress                           = true;
     features12.shaderOutputViewportIndex                     = true;
-    features12.shaderOutputLayer                     = true;
+    features12.shaderOutputLayer                             = true;
     features12.descriptorIndexing                            = true;
     features12.runtimeDescriptorArray                        = true;
     features12.shaderUniformBufferArrayNonUniformIndexing    = true;
@@ -93,65 +98,59 @@ static void init_device(SDL_Window* window) {
     features10.robustBufferAccess = true;
 #endif
     features10.multiDrawIndirect = true;
-    features10.independentBlend = true;
+    features10.independentBlend  = true;
 #ifndef __APPLE__
     features10.geometryShader = true;
 #endif
     vkb::PhysicalDeviceSelector selector{vkb_inst};
-    auto phys_ret = selector
-        .set_minimum_version(1, 3)
-        .set_required_features_13(features13)
-        .set_required_features_12(features12)
-        .set_required_features_11(features11)
-        .set_required_features(features10)
-        .set_surface(ctx.surface)
-        .select();
+    auto                        phys_ret = selector.set_minimum_version(1, 3)
+                        .set_required_features_13(features13)
+                        .set_required_features_12(features12)
+                        .set_required_features_11(features11)
+                        .set_required_features(features10)
+                        .set_surface(ctx.surface)
+                        .select();
 
     if (!phys_ret)
     {
         std::cerr << "Failed to select Vulkan Physical Device. Error: " << phys_ret.error().message() << '\n';
     }
-    
+
     vkb::PhysicalDevice physical_device = phys_ret.value();
 
-    vkb::DeviceBuilder device_builder{physical_device};
-    vkb::Device        vkb_device = device_builder.build().value();
-    ctx.device                    = vkb_device.device;
-    ctx.graphicsQueue             = vkb_device.get_queue(vkb::QueueType::graphics).value();
-    ctx.graphicsQueueFamily       = vkb_device.get_queue_index(vkb::QueueType::graphics).value();
+    vkb::DeviceBuilder  device_builder{physical_device};
+    vkb::Device         vkb_device = device_builder.build().value();
+    ctx.device                     = vkb_device.device;
+    ctx.graphicsQueue              = vkb_device.get_queue(vkb::QueueType::graphics).value();
+    ctx.graphicsQueueFamily        = vkb_device.get_queue_index(vkb::QueueType::graphics).value();
 
     auto comp_ret = vkb_device.get_queue(vkb::QueueType::compute);
     if (!comp_ret)
     {
-        std::cout << "Failed to get compute queue. Error: " << comp_ret.error().message() << '\n';
-
         //Fallback to graphics queue
-        ctx.computeQueue             = ctx.graphicsQueue;
-        ctx.computeQueueFamily       = ctx.graphicsQueueFamily;
+        ctx.computeQueue       = ctx.graphicsQueue;
+        ctx.computeQueueFamily = ctx.graphicsQueueFamily;
     }
     else
     {
-        ctx.computeQueue             = comp_ret.value();
-        ctx.computeQueueFamily       = vkb_device.get_queue_index(vkb::QueueType::compute).value();
+        ctx.computeQueue       = comp_ret.value();
+        ctx.computeQueueFamily = vkb_device.get_queue_index(vkb::QueueType::compute).value();
     }
 
     auto tran_ret = vkb_device.get_queue(vkb::QueueType::transfer);
     if (!tran_ret)
     {
-        std::cout << "Failed to get transfer queue. Error: " << tran_ret.error().message() << '\n';
-
         //Fallback to graphics queue
-        ctx.transferQueue             = ctx.graphicsQueue;
-        ctx.transferQueueFamily       = ctx.graphicsQueueFamily;
+        ctx.transferQueue       = ctx.graphicsQueue;
+        ctx.transferQueueFamily = ctx.graphicsQueueFamily;
     }
     else
     {
-        ctx.transferQueue             = tran_ret.value();
-        ctx.transferQueueFamily       = vkb_device.get_queue_index(vkb::QueueType::transfer).value();
+        ctx.transferQueue       = tran_ret.value();
+        ctx.transferQueueFamily = vkb_device.get_queue_index(vkb::QueueType::transfer).value();
     }
 
-
-    ctx.physicalDevice            = physical_device.physical_device;
+    ctx.physicalDevice = physical_device.physical_device;
 
     VmaAllocatorCreateInfo allocatorInfo = {};
     allocatorInfo.physicalDevice         = ctx.physicalDevice;
@@ -166,8 +165,8 @@ void spock::init(SDL_Window* window)
 {
     init_device(window);
 
-    immCommandFence = create_fence(VK_FENCE_CREATE_SIGNALED_BIT);
-    immCommandPool = create_command_pool(ctx.graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
+    immCommandFence  = create_fence(VK_FENCE_CREATE_SIGNALED_BIT);
+    immCommandPool   = create_command_pool(ctx.graphicsQueueFamily, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     immCommandBuffer = create_command_buffer(immCommandPool);
 
     QUEUE_DESTROY_OBJ(immCommandPool);
@@ -176,21 +175,24 @@ void spock::init(SDL_Window* window)
     ctx.initialised = true;
 }
 
-void spock::clean_init() {
+void spock::clean_init()
+{
     clean_shader_modules();
 }
 
-VkDescriptorSetLayout spock::create_descriptor_set_layout(std::initializer_list<Binding> _bindings, VkShaderStageFlags shaderStages, VkDescriptorSetLayoutCreateFlags flags) {
+VkDescriptorSetLayout spock::create_descriptor_set_layout(std::initializer_list<Binding> _bindings, VkShaderStageFlags shaderStages, VkDescriptorSetLayoutCreateFlags flags)
+{
     std::vector<VkDescriptorSetLayoutBinding> bindings;
-    std::vector<VkDescriptorBindingFlags> bindingFlags;
-    for (auto& b : _bindings) {
+    std::vector<VkDescriptorBindingFlags>     bindingFlags;
+    for (auto& b : _bindings)
+    {
         bindings.push_back({.binding = b.binding, .descriptorType = b.type, .descriptorCount = b.count, .stageFlags = shaderStages});
         bindingFlags.push_back(b.flags);
     }
 
     VkDescriptorSetLayoutBindingFlagsCreateInfo binding_info = {.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO};
-    binding_info.bindingCount = bindingFlags.size();
-    binding_info.pBindingFlags = bindingFlags.data();
+    binding_info.bindingCount                                = bindingFlags.size();
+    binding_info.pBindingFlags                               = bindingFlags.data();
 
     VkDescriptorSetLayoutCreateInfo info = {.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
     info.pNext                           = &binding_info;
@@ -204,9 +206,9 @@ VkDescriptorSetLayout spock::create_descriptor_set_layout(std::initializer_list<
     return layout;
 }
 
-VkPipelineLayout      spock::create_pipeline_layout(std::initializer_list<VkDescriptorSetLayout> dsLayouts, std::initializer_list<VkPushConstantRange> psRanges)
+VkPipelineLayout spock::create_pipeline_layout(std::initializer_list<VkDescriptorSetLayout> dsLayouts, std::initializer_list<VkPushConstantRange> psRanges)
 {
-    VkPipelineLayout layout;
+    VkPipelineLayout           layout;
     VkPipelineLayoutCreateInfo layoutInfo{};
     layoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     layoutInfo.pNext                  = nullptr;
@@ -217,20 +219,24 @@ VkPipelineLayout      spock::create_pipeline_layout(std::initializer_list<VkDesc
     VK_CHECK(vkCreatePipelineLayout(spock::ctx.device, &layoutInfo, nullptr, &layout));
     return layout;
 }
-union DescriptorWriteInfo {
+union DescriptorWriteInfo
+{
     VkDescriptorBufferInfo bufInfo;
     VkDescriptorImageInfo  imgInfo;
 };
-void spock::write_descriptor_sets(std::initializer_list<ImageWrite> imageWrites, std::initializer_list<BufferWrite> bufferWrites) {
+void spock::write_descriptor_sets(std::initializer_list<ImageWrite> imageWrites, std::initializer_list<BufferWrite> bufferWrites)
+{
     static VkWriteDescriptorSet writeSets[32]; //max 32 writes for now
     static DescriptorWriteInfo  writeInfos[32];
 
-    int                  i = 0;
-    for (auto& w : imageWrites) {
+    int                         i = 0;
+    for (auto& w : imageWrites)
+    {
 #ifdef DBG
         assert(i < 32);
 #endif
-        if (w.imageView == VK_NULL_HANDLE) continue;
+        if (w.imageView == VK_NULL_HANDLE)
+            continue;
         writeInfos[i].imgInfo.sampler     = w.sampler;
         writeInfos[i].imgInfo.imageView   = w.imageView;
         writeInfos[i].imgInfo.imageLayout = w.imageLayout;
@@ -250,11 +256,13 @@ void spock::write_descriptor_sets(std::initializer_list<ImageWrite> imageWrites,
 
         i++;
     }
-    for (auto& w : bufferWrites) {
+    for (auto& w : bufferWrites)
+    {
 #ifdef DBG
         assert(i < 32);
 #endif
-        if (w.range == 0 || w.buffer == VK_NULL_HANDLE) continue;
+        if (w.range == 0 || w.buffer == VK_NULL_HANDLE)
+            continue;
 
         writeInfos[i].bufInfo.buffer = w.buffer;
         writeInfos[i].bufInfo.range  = w.range;
@@ -278,26 +286,28 @@ void spock::write_descriptor_sets(std::initializer_list<ImageWrite> imageWrites,
     vkUpdateDescriptorSets(ctx.device, i, writeSets, 0, nullptr);
 }
 
-void spock::begin_immediate_command() {
+void spock::begin_immediate_command()
+{
     VK_CHECK(vkResetFences(ctx.device, 1, &immCommandFence));
     VK_CHECK(vkResetCommandBuffer(immCommandBuffer, 0));
     begin_command_buffer(immCommandBuffer, VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 }
 
-void spock::end_immediate_command() {
+void spock::end_immediate_command()
+{
     VK_CHECK(vkEndCommandBuffer(immCommandBuffer));
-    submit_command_buffer(spock::ctx.graphicsQueue,
-        {immCommandBuffer}, {}, {}, immCommandFence
-    );
+    submit_command_buffer(spock::ctx.graphicsQueue, {immCommandBuffer}, {}, {}, immCommandFence);
     VK_CHECK(vkWaitForFences(ctx.device, 1, &immCommandFence, true, 9999999999));
 }
 
-Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags flags) {
+Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags flags)
+{
     // allocate buffer
     Buffer buffer;
     buffer.size = allocSize;
 
-    if (allocSize == 0) return buffer;
+    if (allocSize == 0)
+        return buffer;
 
     VkBufferCreateInfo bufferInfo = {};
     bufferInfo.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -306,8 +316,8 @@ Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VkMemory
     bufferInfo.usage              = usage;
 
     VmaAllocationCreateInfo vmaallocInfo = {};
-    vmaallocInfo.requiredFlags = requiredFlags;
-    vmaallocInfo.flags         = flags;
+    vmaallocInfo.requiredFlags           = requiredFlags;
+    vmaallocInfo.flags                   = flags;
 
     VK_CHECK(vmaCreateBuffer(ctx.allocator, &bufferInfo, &vmaallocInfo, &buffer.buffer, &buffer.allocation, nullptr));
     return buffer;
@@ -315,13 +325,15 @@ Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VkMemory
 
 Buffer spock::create_buffer(const void* data, size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags flags)
 {
-    if (data == nullptr || allocSize == 0) return {};
+    if (data == nullptr || allocSize == 0)
+        return {};
     Buffer buffer = create_buffer(allocSize, usage, requiredFlags, flags);
     imm_copy_to_buffer(buffer, data, allocSize);
     return buffer;
 }
 
-void spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size) {
+void spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size)
+{
 
     Buffer uploadbuffer = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     vmaCopyMemoryToAllocation(spock::ctx.allocator, src, uploadbuffer.allocation, 0, size);
@@ -330,7 +342,7 @@ void spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, V
     VkBufferCopy bufferCopy;
     bufferCopy.srcOffset = srcOffset;
     bufferCopy.dstOffset = dstOffset;
-    bufferCopy.size = size;
+    bufferCopy.size      = size;
 
     vkCmdCopyBuffer(immCommandBuffer, uploadbuffer.buffer, buffer, 1, &bufferCopy);
     end_immediate_command();
@@ -338,7 +350,8 @@ void spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, V
     vmaDestroyBuffer(ctx.allocator, uploadbuffer.buffer, uploadbuffer.allocation);
 }
 
-Image spock::create_image(void* data, VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, uint32_t mipLevels) {
+Image spock::create_image(void* data, VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, uint32_t mipLevels)
+{
     size_t data_size    = extent.depth * extent.width * extent.height * 4;
     Buffer uploadbuffer = create_buffer(data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
@@ -364,9 +377,8 @@ Image spock::create_image(void* data, VkExtent3D extent, VkFormat format, VkImag
     // copy the buffer into the image
     vkCmdCopyBufferToImage(immCommandBuffer, uploadbuffer.buffer, new_image.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
 
-    image_barrier(immCommandBuffer, new_image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR,
-            VK_ACCESS_2_SHADER_READ_BIT_KHR);
+    image_barrier(immCommandBuffer, new_image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT_KHR | VK_PIPELINE_STAGE_2_VERTEX_SHADER_BIT_KHR,
+                  VK_ACCESS_2_SHADER_READ_BIT_KHR);
 
     end_immediate_command();
 
@@ -380,64 +392,66 @@ Image spock::create_image(const char* fileName, VkImageUsageFlags usage, uint32_
     VkExtent3D     extent{};
     int            width = 0, height = 0;
     unsigned char* pixels = nullptr;
-    bool empty = false;
-    pixels = stbi_load(fileName, &width, &height, nullptr, 4);
+    bool           empty  = false;
+    pixels                = stbi_load(fileName, &width, &height, nullptr, 4);
 
     //create empty pixel image if couldn't load
     if (width == 0 || height == 0)
     {
-        extent.width          = 1;
-        extent.height         = 1;
-        extent.depth          = 1;
-        pixels = new unsigned char[4];
-        memset(pixels, 0, sizeof(unsigned char)*4);
+        extent.width  = 1;
+        extent.height = 1;
+        extent.depth  = 1;
+        pixels        = new unsigned char[4];
+        memset(pixels, 0, sizeof(unsigned char) * 4);
         empty = true;
     }
     else
     {
-        extent.width          = width;
-        extent.height         = height;
-        extent.depth          = 1;
+        extent.width  = width;
+        extent.height = height;
+        extent.depth  = 1;
     }
 
     auto image = create_image(pixels, extent, VK_FORMAT_R8G8B8A8_UNORM, usage, mipLevels);
-    if (empty) free(pixels);
-    else stbi_image_free(pixels);
+    if (empty)
+        free(pixels);
+    else
+        stbi_image_free(pixels);
     return image;
 }
 
-spock::Image spock::create_image(VkExtent3D extent, VkImageType type, VkFormat format, VkImageUsageFlags usage, uint32_t mipLevels) {
+spock::Image spock::create_image(VkExtent3D extent, VkImageType type, VkFormat format, VkImageUsageFlags usage, uint32_t mipLevels)
+{
     spock::Image image;
     image.format = format;
     image.extent = extent;
 
     VkImageCreateInfo info = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
-        .imageType = type,
-        .format = format,
-        .extent = extent,
-        .mipLevels = mipLevels,
-        .arrayLayers = type == VK_IMAGE_TYPE_3D ? 1 : type == VK_IMAGE_TYPE_2D ? extent.depth : extent.height,
-        .samples = VK_SAMPLE_COUNT_1_BIT,
-        .tiling = VK_IMAGE_TILING_OPTIMAL,
-        .usage = usage,
+        .sType       = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+        .imageType   = type,
+        .format      = format,
+        .extent      = extent,
+        .mipLevels   = mipLevels,
+        .arrayLayers = type == VK_IMAGE_TYPE_3D ? 1 :
+            type == VK_IMAGE_TYPE_2D            ? extent.depth :
+                                                  extent.height,
+        .samples     = VK_SAMPLE_COUNT_1_BIT,
+        .tiling      = VK_IMAGE_TILING_OPTIMAL,
+        .usage       = usage,
     };
 
-    switch(type)
+    switch (type)
     {
-        case VK_IMAGE_TYPE_2D:
-        info.extent.depth = 1;
-        break;
+        case VK_IMAGE_TYPE_2D: info.extent.depth = 1; break;
         case VK_IMAGE_TYPE_1D:
-        info.extent.height = 1;
-        info.extent.depth = 1;
-        break;
-        default:
-        break;
+            info.extent.height = 1;
+            info.extent.depth  = 1;
+            break;
+        default: break;
     }
 
     VmaAllocationCreateInfo alloc = {
-        .usage = VMA_MEMORY_USAGE_GPU_ONLY,
+        .usage         = VMA_MEMORY_USAGE_GPU_ONLY,
         .requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
     };
 
@@ -448,46 +462,34 @@ spock::Image spock::create_image(VkExtent3D extent, VkImageType type, VkFormat f
 
 VkImageView spock::create_image_view(const spock::Image& image, VkImageViewType viewType, VkExtent3D extent, uint32_t baseMipLevel, uint32_t mipLevels, uint32_t baseArrayLayer)
 {
-    VkImageViewCreateInfo info = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-        .image = image.image,
-        .viewType = viewType,
-        .format = image.format,
-        .subresourceRange = {
-            .baseMipLevel = baseMipLevel,
-            .levelCount = mipLevels,
-            .baseArrayLayer = baseArrayLayer,
-        }
-    };
+    VkImageViewCreateInfo info = {.sType            = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+                                  .image            = image.image,
+                                  .viewType         = viewType,
+                                  .format           = image.format,
+                                  .subresourceRange = {
+                                      .baseMipLevel   = baseMipLevel,
+                                      .levelCount     = mipLevels,
+                                      .baseArrayLayer = baseArrayLayer,
+                                  }};
 
     //may need more
-    switch(info.format)
+    switch (info.format)
     {
         case VK_FORMAT_D32_SFLOAT:
         case VK_FORMAT_D16_UNORM_S8_UINT:
         case VK_FORMAT_D24_UNORM_S8_UINT:
         case VK_FORMAT_D32_SFLOAT_S8_UINT:
-        case VK_FORMAT_D16_UNORM:
-        info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        break;
-        default:
-        info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        break;
+        case VK_FORMAT_D16_UNORM: info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT; break;
+        default: info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT; break;
     }
 
-    switch(viewType)
+    switch (viewType)
     {
         case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
         case VK_IMAGE_VIEW_TYPE_CUBE:
-        case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
-        info.subresourceRange.layerCount = extent.depth;
-        break;
-        case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
-        info.subresourceRange.layerCount = extent.height;
-        break;
-        default:
-        info.subresourceRange.layerCount = 1;
-        break;
+        case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY: info.subresourceRange.layerCount = extent.depth; break;
+        case VK_IMAGE_VIEW_TYPE_1D_ARRAY: info.subresourceRange.layerCount = extent.height; break;
+        default: info.subresourceRange.layerCount = 1; break;
     }
 
     VkImageView view;
@@ -499,36 +501,29 @@ VkImageView spock::create_image_view(const spock::Image& image, VkImageViewType 
 spock::Image spock::create_image_and_view(VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, uint32_t mipLevels)
 {
     VkImageType type;
-    uint32_t layerCount;
+    uint32_t    layerCount;
 
     switch (viewType)
     {
         case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
-        case VK_IMAGE_VIEW_TYPE_1D:
-        type = VK_IMAGE_TYPE_1D;
-        break;
+        case VK_IMAGE_VIEW_TYPE_1D: type = VK_IMAGE_TYPE_1D; break;
 
-        case VK_IMAGE_VIEW_TYPE_3D:
-        type = VK_IMAGE_TYPE_3D;
-        break;
+        case VK_IMAGE_VIEW_TYPE_3D: type = VK_IMAGE_TYPE_3D; break;
 
         case VK_IMAGE_VIEW_TYPE_CUBE:
         case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
         case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
-        case VK_IMAGE_VIEW_TYPE_2D:
-        type = VK_IMAGE_TYPE_2D;
-        break;
+        case VK_IMAGE_VIEW_TYPE_2D: type = VK_IMAGE_TYPE_2D; break;
 
-        default:
-        break;
+        default: break;
     }
 
     spock::Image image = create_image(extent, type, format, usage, mipLevels);
-    image.view = create_image_view(image, viewType, extent, 0, mipLevels, 0);
+    image.view         = create_image_view(image, viewType, extent, 0, mipLevels, 0);
 
     //not the actual extent of the image, just the user input
-    image.extent = extent;
-    image.currentStage = VK_PIPELINE_STAGE_2_NONE;
+    image.extent        = extent;
+    image.currentStage  = VK_PIPELINE_STAGE_2_NONE;
     image.currentAccess = VK_ACCESS_2_NONE;
 
     return image;
@@ -594,24 +589,25 @@ void spock::destroy_image_view(VkImageView view)
     vkDestroyImageView(ctx.device, view, nullptr);
 }
 
-void spock::create_swapchain(spock::Swapchain& swapchain, uint32_t width, uint32_t height, VkPresentModeKHR presentMode, VkSwapchainKHR oldSwapchain) {
+void spock::create_swapchain(spock::Swapchain& swapchain, uint32_t width, uint32_t height, VkPresentModeKHR presentMode, VkSwapchainKHR oldSwapchain)
+{
     vkb::SwapchainBuilder swapchainBuilder{ctx.physicalDevice, ctx.device, ctx.surface};
 
-    swapchain.format   = VK_FORMAT_B8G8R8A8_UNORM;
+    swapchain.format = VK_FORMAT_B8G8R8A8_UNORM;
 
     if (oldSwapchain != VK_NULL_HANDLE)
         swapchainBuilder.set_old_swapchain(oldSwapchain);
 
     auto swap_ret = swapchainBuilder
-                                      //.use_default_format_selection()
-                                      .set_desired_format(VkSurfaceFormatKHR{.format = swapchain.format, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR})
-                                      .set_desired_min_image_count(3)
-                                      //use vsync present mode
-                                      .set_desired_present_mode(presentMode)
-                                      .set_desired_extent(width, height)
-                                      .add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
-                                      .add_image_usage_flags(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-                                      .build();
+                        //.use_default_format_selection()
+                        .set_desired_format(VkSurfaceFormatKHR{.format = swapchain.format, .colorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR})
+                        .set_desired_min_image_count(3)
+                        //use vsync present mode
+                        .set_desired_present_mode(presentMode)
+                        .set_desired_extent(width, height)
+                        .add_image_usage_flags(VK_IMAGE_USAGE_TRANSFER_DST_BIT)
+                        .add_image_usage_flags(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+                        .build();
 
     if (!swap_ret)
     {
@@ -624,7 +620,7 @@ void spock::create_swapchain(spock::Swapchain& swapchain, uint32_t width, uint32
     //store swapchain and its related images
     swapchain.swapchain = vkbSwapchain.swapchain;
 
-    auto views = vkbSwapchain.get_image_views().value();
+    auto views  = vkbSwapchain.get_image_views().value();
     auto images = vkbSwapchain.get_images().value();
 
     swapchain.images.resize(images.size());
@@ -633,11 +629,11 @@ void spock::create_swapchain(spock::Swapchain& swapchain, uint32_t width, uint32
 
     for (int i = 0; i < swapchain.images.size(); i++)
     {
-        swapchain.images[i].image = images[i];
-        swapchain.images[i].extent = {swapchain.extent.width, swapchain.extent.height, 1};
-        swapchain.views[i] = views[i];
-        swapchain.images[i].format = swapchain.format;
-        swapchain.images[i].currentStage = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+        swapchain.images[i].image         = images[i];
+        swapchain.images[i].extent        = {swapchain.extent.width, swapchain.extent.height, 1};
+        swapchain.views[i]                = views[i];
+        swapchain.images[i].format        = swapchain.format;
+        swapchain.images[i].currentStage  = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
         swapchain.images[i].currentAccess = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
         if (swapchain.semaphores[i] == VK_NULL_HANDLE)
         {
@@ -647,7 +643,8 @@ void spock::create_swapchain(spock::Swapchain& swapchain, uint32_t width, uint32
     }
 }
 
-void spock::cleanup() {
+void spock::cleanup()
+{
     if (!ctx.initialised)
         return;
 
@@ -664,6 +661,7 @@ void spock::cleanup() {
     vkDestroyInstance(ctx.instance, nullptr);
 }
 
-void spock::destroy_buffer(Buffer buffer) {
+void spock::destroy_buffer(Buffer buffer)
+{
     vmaDestroyBuffer(ctx.allocator, buffer.buffer, buffer.allocation);
 }
