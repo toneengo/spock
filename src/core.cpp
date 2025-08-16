@@ -85,7 +85,6 @@ static void init_device(SDL_Window* window)
     features12.shaderStorageImageArrayNonUniformIndexing     = true;
     features12.shaderSampledImageArrayNonUniformIndexing     = true;
     features12.shaderStorageImageArrayNonUniformIndexing     = true;
-    features12.descriptorBindingUniformBufferUpdateAfterBind = true;
     features12.descriptorBindingSampledImageUpdateAfterBind  = true;
     features12.descriptorBindingStorageBufferUpdateAfterBind = true;
     features12.descriptorBindingStorageImageUpdateAfterBind  = true;
