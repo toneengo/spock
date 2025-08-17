@@ -19,10 +19,24 @@
 #include "spock/shader.hpp"
 #include <iostream>
 
+
 #ifdef DBG
 const bool gEnableValidationLayers = true;
+
+#define DBG_NAME(CTX, TYPE, OB, NAME)                                   \
+{                                                                       \
+    VkDebugUtilsObjectNameInfoEXT nameInfo = {                          \
+        .sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT,    \
+        .pNext = nullptr,                                               \
+        .objectType = TYPE,                                             \
+        .objectHandle = (uint64_t)OB,                                   \
+        .pObjectName = dbgName,                                         \
+    };                                                                  \
+    CTX.debugNameFn(CTX.device, &nameInfo);                             \
+}
 #else
 const bool gEnableValidationLayers = false;
+#define DBG_NAME(CTX, TYPE, OB, NAME)
 #endif
 
 using namespace spock;
@@ -59,6 +73,9 @@ static void init_device(SDL_Window* window) {
     vkb::Instance vkb_inst = inst_ret.value();
     ctx.instance           = vkb_inst.instance;
     ctx.debugMessenger     = vkb_inst.debug_messenger;
+#ifdef DBG
+    ctx.debugNameFn = (PFN_vkSetDebugUtilsObjectNameEXT) vkGetInstanceProcAddr(ctx.instance, "vkSetDebugUtilsObjectNameEXT");
+#endif
 
     if (!SDL_Vulkan_CreateSurface(ctx.window, ctx.instance, nullptr, &ctx.surface))
     {
@@ -89,6 +106,7 @@ static void init_device(SDL_Window* window) {
     features11.multiview = true;
 
     VkPhysicalDeviceFeatures features10{};
+    features10.drawIndirectFirstInstance                     = true;
 #ifdef DBG
     features10.robustBufferAccess = true;
 #endif
@@ -292,7 +310,7 @@ void spock::end_immediate_command() {
     VK_CHECK(vkWaitForFences(ctx.device, 1, &immCommandFence, true, 9999999999));
 }
 
-Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags flags) {
+Buffer spock::create_buffer(const char* dbgName, size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags flags) {
     // allocate buffer
     Buffer buffer;
     buffer.size = allocSize;
@@ -310,20 +328,23 @@ Buffer spock::create_buffer(size_t allocSize, VkBufferUsageFlags usage, VkMemory
     vmaallocInfo.flags         = flags;
 
     VK_CHECK(vmaCreateBuffer(ctx.allocator, &bufferInfo, &vmaallocInfo, &buffer.buffer, &buffer.allocation, nullptr));
+
+    DBG_NAME(ctx, VK_OBJECT_TYPE_BUFFER, buffer.buffer, dbgName);
+
     return buffer;
 }
 
-Buffer spock::create_buffer(const void* data, size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags flags)
+Buffer spock::create_buffer(const char* dbgName, const void* data, size_t allocSize, VkBufferUsageFlags usage, VkMemoryPropertyFlags requiredFlags, VmaAllocationCreateFlags flags)
 {
     if (data == nullptr || allocSize == 0) return {};
-    Buffer buffer = create_buffer(allocSize, usage, requiredFlags, flags);
+    Buffer buffer = create_buffer(dbgName, allocSize, usage, requiredFlags, flags);
     imm_copy_to_buffer(buffer, data, allocSize);
     return buffer;
 }
 
 void spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, VkDeviceSize dstOffset, VkDeviceSize size) {
 
-    Buffer uploadbuffer = create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    Buffer uploadbuffer = create_buffer("copyBuffer", size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     vmaCopyMemoryToAllocation(spock::ctx.allocator, src, uploadbuffer.allocation, 0, size);
     begin_immediate_command();
 
@@ -340,7 +361,7 @@ void spock::copy_to_buffer(VkBuffer buffer, void* src, VkDeviceSize srcOffset, V
 
 Image spock::create_image(void* data, VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, uint32_t mipLevels) {
     size_t data_size    = extent.depth * extent.width * extent.height * 4;
-    Buffer uploadbuffer = create_buffer(data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    Buffer uploadbuffer = create_buffer("imageBuffer", data_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     vmaCopyMemoryToAllocation(spock::ctx.allocator, data, uploadbuffer.allocation, 0, data_size);
 
@@ -446,7 +467,7 @@ spock::Image spock::create_image(VkExtent3D extent, VkImageType type, VkFormat f
     return image;
 }
 
-VkImageView spock::create_image_view(const spock::Image& image, VkImageViewType viewType, VkExtent3D extent, uint32_t baseMipLevel, uint32_t mipLevels, uint32_t baseArrayLayer)
+VkImageView spock::create_image_view(const char* dbgName, const spock::Image& image, VkImageViewType viewType, VkExtent3D extent, uint32_t baseMipLevel, uint32_t mipLevels, uint32_t baseArrayLayer)
 {
     VkImageViewCreateInfo info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
@@ -492,11 +513,12 @@ VkImageView spock::create_image_view(const spock::Image& image, VkImageViewType 
 
     VkImageView view;
     VK_CHECK(vkCreateImageView(ctx.device, &info, nullptr, &view));
+    DBG_NAME(ctx, VK_OBJECT_TYPE_IMAGE_VIEW, view, dbgName);
 
     return view;
 }
 
-spock::Image spock::create_image_and_view(VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, uint32_t mipLevels)
+spock::Image spock::create_image_and_view(const char* dbgName, VkExtent3D extent, VkFormat format, VkImageUsageFlags usage, VkImageViewType viewType, uint32_t mipLevels)
 {
     VkImageType type;
     uint32_t layerCount;
@@ -524,7 +546,7 @@ spock::Image spock::create_image_and_view(VkExtent3D extent, VkFormat format, Vk
     }
 
     spock::Image image = create_image(extent, type, format, usage, mipLevels);
-    image.view = create_image_view(image, viewType, extent, 0, mipLevels, 0);
+    image.view = create_image_view(dbgName, image, viewType, extent, 0, mipLevels, 0);
 
     //not the actual extent of the image, just the user input
     image.extent = extent;
@@ -570,7 +592,7 @@ VkFence spock::create_fence(VkFenceCreateFlagBits flags)
     return fence;
 }
 
-VkSemaphore spock::create_semaphore()
+VkSemaphore spock::create_semaphore(const char* dbgName)
 {
     VkSemaphoreCreateInfo info = {};
     info.sType                 = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -578,6 +600,9 @@ VkSemaphore spock::create_semaphore()
     info.flags                 = 0;
     VkSemaphore semaphore;
     VK_CHECK(vkCreateSemaphore(spock::ctx.device, &info, nullptr, &semaphore));
+
+    DBG_NAME(ctx, VK_OBJECT_TYPE_SEMAPHORE, semaphore, dbgName);
+
     return semaphore;
 }
 void spock::destroy_image(Image image)
@@ -641,7 +666,9 @@ void spock::create_swapchain(spock::Swapchain& swapchain, uint32_t width, uint32
         swapchain.images[i].currentAccess = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
         if (swapchain.semaphores[i] == VK_NULL_HANDLE)
         {
-            swapchain.semaphores[i] = create_semaphore();
+            char buf[16];
+            sprintf(buf, "Swapchain %i", i);
+            swapchain.semaphores[i] = create_semaphore(buf);
             QUEUE_DESTROY_OBJ(swapchain.semaphores[i]);
         }
     }
