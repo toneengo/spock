@@ -30,6 +30,11 @@ namespace spock {
         SDL_Window*     window;
 
         spock::DestroyQueue destroyQueue;
+
+#ifdef DBG
+        PFN_vkSetDebugUtilsObjectNameEXT debugNameFn;
+#endif
+
     } ctx;
 
 #ifdef DBG
