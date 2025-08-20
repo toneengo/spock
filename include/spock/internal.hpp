@@ -9,6 +9,11 @@
 #include <SDL3/SDL.h>
 #include <glm/glm.hpp>
 
+#ifdef DBG
+#define SPOCK_VALIDATE
+#endif
+#define SPOCK_VALIDATE
+
 namespace spock {
     inline struct RenderContext {
         bool                        initialised = false;
@@ -31,7 +36,7 @@ namespace spock {
 
         spock::DestroyQueue destroyQueue;
 
-#ifdef DBG
+#ifdef SPOCK_VALIDATE
         PFN_vkSetDebugUtilsObjectNameEXT debugNameFn;
 #endif
 

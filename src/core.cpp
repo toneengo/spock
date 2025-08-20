@@ -22,7 +22,11 @@
 
 #ifdef DBG
 const bool gEnableValidationLayers = true;
+#else
+const bool gEnableValidationLayers = false;
+#endif
 
+#ifdef SPOCK_VALIDATE
 #define DBG_NAME(CTX, TYPE, OB, NAME)                                   \
 {                                                                       \
     VkDebugUtilsObjectNameInfoEXT nameInfo = {                          \
@@ -30,12 +34,11 @@ const bool gEnableValidationLayers = true;
         .pNext = nullptr,                                               \
         .objectType = TYPE,                                             \
         .objectHandle = (uint64_t)OB,                                   \
-        .pObjectName = dbgName,                                         \
+        .pObjectName = NAME,                                            \
     };                                                                  \
     CTX.debugNameFn(CTX.device, &nameInfo);                             \
 }
 #else
-const bool gEnableValidationLayers = false;
 #define DBG_NAME(CTX, TYPE, OB, NAME)
 #endif
 
@@ -57,7 +60,7 @@ static void init_device(SDL_Window* window) {
 
     vkb::InstanceBuilder builder;
     auto                 inst_ret = builder.set_app_name("vulkan app")
-#ifdef DBG
+#ifdef SPOCK_VALIDATE
                         .request_validation_layers(gEnableValidationLayers)
                         //.enable_layer("VK_LAYER_KHRONOS_synchronization2")
 #endif
@@ -73,7 +76,8 @@ static void init_device(SDL_Window* window) {
     vkb::Instance vkb_inst = inst_ret.value();
     ctx.instance           = vkb_inst.instance;
     ctx.debugMessenger     = vkb_inst.debug_messenger;
-#ifdef DBG
+#ifdef SPOCK_VALIDATE
+    std::cout << "Graphics validation enabled\n";
     ctx.debugNameFn = (PFN_vkSetDebugUtilsObjectNameEXT) vkGetInstanceProcAddr(ctx.instance, "vkSetDebugUtilsObjectNameEXT");
 #endif
 
